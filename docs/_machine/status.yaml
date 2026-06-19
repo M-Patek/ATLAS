@@ -1,0 +1,143 @@
+atlas_status:
+  version: "0.1.0"
+  last_updated: "2026-06-20"
+
+  layers:
+    01-foundation:
+      name: "Foundation"
+      description: "VLM底座、World Model、VLA模型"
+      status: in-progress
+      completeness: 30%
+      topics:
+        vlm:
+          file: "01-vlm.md"
+          status: draft
+          priority: high
+        world-model:
+          file: "02-world-model.md"
+          status: draft
+          priority: high
+        vla:
+          file: "03-vla.md"
+          status: draft
+          priority: high
+        architecture-patterns:
+          file: "04-architecture-patterns.md"
+          status: not-started
+          priority: medium
+
+    02-annotation:
+      name: "Annotation"
+      description: "Schema设计、标注标准"
+      status: not-started
+      completeness: 0%
+      topics:
+        schema-design:
+          file: "01-schema-design.md"
+          status: not-started
+          priority: high
+        action-annotation:
+          file: "02-action-annotation.md"
+          status: not-started
+          priority: high
+        scene-annotation:
+          file: "03-scene-annotation.md"
+          status: not-started
+          priority: medium
+        physics-annotation:
+          file: "04-physics-annotation.md"
+          status: not-started
+          priority: medium
+
+    03-perception:
+      name: "Perception"
+      description: "感知算法层"
+      status: not-started
+      completeness: 0%
+      topics:
+        stereo-imu:
+          file: "01-stereo-imu.md"
+          status: not-started
+          priority: high
+          note: "双目+IMU协同，Kalibr等工具"
+        depth-estimation:
+          file: "02-depth-estimation.md"
+          status: not-started
+          priority: high
+          note: "FoundationStereo深入研究"
+        slam:
+          file: "03-slam.md"
+          status: not-started
+          priority: high
+        hand-pose:
+          file: "04-hand-pose.md"
+          status: not-started
+          priority: medium
+        reconstruction:
+          file: "05-3d-reconstruction.md"
+          status: not-started
+          priority: medium
+        sensor-fusion:
+          file: "06-sensor-fusion.md"
+          status: not-started
+          priority: low
+
+    04-data-ecosystem:
+      name: "Data Ecosystem"
+      description: "数据采集范式与硬件"
+      status: not-started
+      completeness: 0%
+      topics:
+        ego-collection:
+          file: "01-ego-collection.md"
+          status: not-started
+          priority: high
+        umi-systems:
+          file: "02-umi-systems.md"
+          status: not-started
+          priority: high
+        sim2real:
+          file: "03-sim2real.md"
+          status: not-started
+          priority: medium
+        teleoperation:
+          file: "04-teleoperation.md"
+          status: not-started
+          priority: medium
+        hardware-matrix:
+          file: "05-hardware-matrix.md"
+          status: not-started
+          priority: high
+          note: "Ego/UMI/Sim2Real/遥操作 vs 硬件配套"
+        data-formats:
+          file: "06-data-formats.md"
+          status: not-started
+          priority: medium
+
+    05-integration:
+      name: "Integration"
+      description: "系统整合"
+      status: not-started
+      completeness: 0%
+      topics:
+        pipeline-patterns:
+          file: "01-pipeline-patterns.md"
+          status: not-started
+          priority: medium
+        quality-gates:
+          file: "02-quality-gates.md"
+          status: not-started
+          priority: medium
+        system-design:
+          file: "03-system-design.md"
+          status: not-started
+          priority: medium
+
+  tech_debt: []
+
+  next_actions:
+    - "完成01-foundation/01-vlm.md (VLM底座模型)"
+    - "完成01-foundation/03-vla.md (VLA模型)"
+    - "启动03-perception/02-depth-estimation.md (FoundationStereo深入)"
+    - "启动03-perception/01-stereo-imu.md (双目+IMU)"
+    - "启动04-data-ecosystem/05-hardware-matrix.md"

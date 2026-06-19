@@ -1,0 +1,90 @@
+# ATLAS: Embodied AI Data Infrastructure Learning Map
+
+## For Agents: Start Here
+
+[AGENTS.md](AGENTS.md) — Machine operation protocol (READ FIRST)
+[docs/INDEX.md](docs/INDEX.md) — Human-readable documentation index
+
+## Navigation by Intent
+
+### Quick Links by Task
+
+**→ Researching which MODEL to use?**
+- Start: [01-foundation/index.md](docs/01-foundation/index.md)
+- Topics: VLM底座, World Model, VLA端到端
+
+**→ Designing ANNOTATION schemas?**
+- Start: [02-annotation/index.md](docs/02-annotation/index.md)
+- Topics: Schema设计, 动作/场景/物理标注
+
+**→ Implementing PERCEPTION algorithms?**
+- Start: [03-perception/index.md](docs/03-perception/index.md)
+- Topics: 双目+IMU, 深度估计(FoundationStereo), SLAM, 手势估计, 3D重建
+
+**→ Choosing DATA collection setup?**
+- Start: [04-data-ecosystem/index.md](docs/04-data-ecosystem/index.md)
+- Topics: Ego-centric, UMI, Sim2Real, 遥操作, 硬件矩阵
+
+**→ Understanding full SYSTEM integration?**
+- Start: [05-integration/index.md](docs/05-integration/index.md)
+- Topics: Pipeline模式, 质量门控, 系统设计
+
+## Data Flow Architecture
+
+Input data flows bottom-up, model decisions flow top-down:
+
+```
+┌─────────────────────────────────────────┐
+│  05-integration     System Design       │ ← Deployment decisions
+├─────────────────────────────────────────┤
+│  01-foundation      VLM/World Model/VLA │ ← Model selection
+├─────────────────────────────────────────┤
+│  02-annotation      Schema/Standards    │ ← Annotation pipeline
+├─────────────────────────────────────────┤
+│  03-perception      Stereo/Depth/SLAM   │ ← Perception stack
+├─────────────────────────────────────────┤
+│  04-data-ecosystem  Ego/UMI/Sim2Real    │ ← Data collection
+└─────────────────────────────────────────┘
+```
+
+## Quick Facts
+
+- **Layers**: 5 (Foundation, Annotation, Perception, Data, Integration)
+- **Topics**: ~20-25 focused documents
+- **Read time**: Per topic 10-15 minutes; Full tour 4-6 hours
+- **Status tracking**: docs/_machine/status.yaml
+
+## Top Priority Topics
+
+Per project requirements:
+
+1. **FoundationStereo** → docs/03-perception/02-depth-estimation.md
+2. **双目+IMU协同** → docs/03-perception/01-stereo-imu.md
+3. **VLA模型** → docs/01-foundation/03-vla.md
+4. **硬件矩阵** → docs/04-data-ecosystem/05-hardware-matrix.md
+
+## Cross-Reference Guide
+
+| From | To | Typical Flow |
+|------|-----|--------------|
+| 04-data-ecosystem | 03-perception | Raw data → Perception output |
+| 03-perception | 02-annotation | Features → Structured labels |
+| 02-annotation | 01-foundation | Labels → Training data |
+| 01-foundation | 05-integration | Models → Production system |
+
+## Content Status
+
+See [docs/_machine/status.yaml](docs/_machine/status.yaml) for:
+- Completion status per topic
+- Next planned content
+- Known gaps
+
+## Reference Library
+
+- [references/papers/](references/) — Organized by topic
+- [references/datasets.md](references/datasets.md) — Dataset comparison
+- [references/tools.md](references/tools.md) — Code repositories
+
+---
+
+*ATLAS: Atlas of Technologies for Learning Autonomous Systems*
