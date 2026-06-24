@@ -60,7 +60,7 @@ ATLAS是DVAS项目配套的知识基础设施，聚焦于四个维度：
 
 ## 关联项目
 
-- **DVAS** — Data-driven Video Annotation System（本学习图谱的服务对象）
+- **DVAS** — Distilled Video Annotation Specialist（本学习图谱的服务对象）
 
 ## 许可
 
