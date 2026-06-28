@@ -250,6 +250,83 @@ class CognitiveSpace(ABC):
             'passable': best_pos != position,
         }
 
+    def compute_validity(self, position: Tuple[int, int],
+                        observation: Dict[str, Any],
+                        actual: Optional[Dict[str, Any]] = None) -> float:
+        """
+        计算空间在当前场景下的"有效性"
+
+        核心思想：不是外部条件判断，而是空间自己判断
+        "我的数学模型在这个场景下还适用吗？"
+
+        返回值：0.0 ~ 1.0
+        - 1.0 = 完全适用（预测完美）
+        - 0.5 = 边界区域（预测有偏差）
+        - 0.0 = 完全失效（预测完全错误）
+
+        类比：
+        - 牛顿力学在低速场景：validity ≈ 1.0
+        - 牛顿力学在高速场景：validity ≈ 0.1（需要相对论）
+        - 欧氏空间在平坦地形：validity ≈ 1.0
+        - 欧氏空间在强曲率地形：validity ≈ 0.2（需要Ricci）
+
+        Args:
+            position: 当前位置
+            observation: 当前观测
+            actual: 实际结果（用于验证预测，可选）
+
+        Returns:
+            有效性分数 [0.0, 1.0]
+        """
+        # 默认实现：基于预测能力
+        prediction = self.predict_next_state(position, observation)
+
+        if actual is None:
+            # 没有实际结果，基于内部一致性
+            uncertainty = prediction.get('predicted_uncertainty', 0.5)
+            return max(0.0, 1.0 - uncertainty)
+
+        # 有实际结果，计算预测误差
+        predicted_pos = prediction.get('predicted_position', position)
+        actual_pos = actual.get('position', position)
+
+        pos_error = np.sqrt(
+            (predicted_pos[0] - actual_pos[0])**2 +
+            (predicted_pos[1] - actual_pos[1])**2
+        )
+
+        # 误差越大，validity越低
+        max_error = np.sqrt(self.width**2 + self.height**2)
+        normalized_error = min(pos_error / max_error, 1.0)
+
+        return max(0.0, 1.0 - normalized_error)
+
+    def get_validity_fields(self) -> Dict[str, np.ndarray]:
+        """
+        获取有效性场数据
+
+        返回空间在每个位置的有效性分布。
+        用于可视化"这个空间在哪些区域有效"。
+
+        Returns:
+            {'validity': 2D array [0,1]}
+        """
+        # 默认实现：基于场数据的简单估计
+        fields = self.get_visualization_fields()
+
+        # 如果有uncertainty场，用它估计validity
+        if 'uncertainty' in fields:
+            uncertainty = fields['uncertainty']
+            validity = 1.0 - np.clip(uncertainty, 0, 1)
+        elif 'metric' in fields:
+            # metric越接近1（欧氏），越有效
+            metric = fields['metric']
+            validity = 1.0 - np.clip(np.abs(metric - 1.0), 0, 1)
+        else:
+            validity = np.ones((self.width, self.height)) * 0.5
+
+        return {'validity': validity}
+
     def get_statistics(self) -> Dict[str, float]:
         """获取空间统计信息"""
         return {

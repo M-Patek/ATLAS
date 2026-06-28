@@ -239,17 +239,77 @@ atlas_status:
       - "experiments/ab_test_quick.py"          # A/B测试快速验证
       - "experiments/ab_test_spaces.py"         # A/B测试（标准版）
       - "experiments/ab_test_research.py"       # 完整研究实验（3D+A/B+消融）
+      - "experiments/test_physical_kitchen.py"  # 物理厨房基础设施测试
+      - "experiments/demo_physical_kitchen.py" # 物理厨房演示
+      - "experiments/test_ssfr_kitchen.py"    # SSFR厨房集成测试
+      - "experiments/demo_ssfr_kitchen.py"    # SSFR厨房集成演示
+
+  physical_kitchen:
+    status: stable
+    components:
+      physics_engine:
+        status: complete
+        features:
+          - "pymunk 2D physics with gravity, collision, friction"
+          - "Box shapes for proper wall/floor collision"
+          - "60 FPS physics step"
+      robot:
+        status: complete
+        features:
+          - "Physical body with mass, velocity, angular velocity"
+          - "Movement: forward/backward/turn"
+          - "Mechanical arm with angle/extension control"
+          - "Grip/release with PinJoint constraint"
+          - "Raycast sensor system (36 rays, 120° FOV)"
+      objects:
+        status: complete
+        features:
+          - "14 predefined objects (cups, plates, appliances, ingredients)"
+          - "Object properties: mass, friction, material, grabbable"
+          - "Static and dynamic objects"
+      tasks:
+        status: complete
+        features:
+          - "3 predefined tasks (make_coffee, prepare_breakfast, clean_table)"
+          - "Task steps with pre/post conditions"
+          - "Task progress tracking"
+      ssfr_integration:
+        status: complete
+        features:
+          - "KitchenSpaceAdapter: continuous → discrete mapping"
+          - "PhysicalSSFR: SSFR wrapper for physical environments"
+          - "SSFRTaskPlanner: task execution with SSFR guidance"
+          - "Space-aware navigation (Ricci/Fisher/Wasserstein)"
+          - "Structure competition and evolution in physical world"
+    tests:
+      - "experiments/test_physical_kitchen.py"    # 10/10 infrastructure tests
+      - "experiments/test_ssfr_kitchen.py"        # 7/7 integration tests
+    demos:
+      - "experiments/demo_physical_kitchen.py"    # Physics demo
+      - "experiments/demo_ssfr_kitchen.py"        # SSFR integration demo
+    files:
+      - "src/atlas/kitchen/__init__.py"           # Core physics system
+      - "src/atlas/kitchen/controller.py"         # Task controller
+      - "experiments/demo_ssfr_kitchen.py"        # SSFR integration
+      - "experiments/test_ssfr_kitchen.py"        # Integration tests
+      - "docs/kitchen.md"                         # Kitchen documentation
+      - "docs/ssfr_kitchen_integration.md"        # Integration documentation
 
   roadmap:
-    current_phase: "Research: Large-Scale A/B Testing & 3D Spaces ✓"
+    current_phase: "Application: SSFR in Physical Kitchen ✓"
     completed:
-      - "3D grid space implementation (euclidean3d, ricci3d, conformal3d)"
-      - "3D solver with 6/26 neighbor connectivity"
-      - "Large-scale A/B testing framework"
-      - "1170 total runs (900 2D + 270 3D) with 30 trials each"
-      - "Publication-ready LaTeX report generation"
-      - "Ablation study framework"
+      - "Physical kitchen sandbox (pymunk 2D physics)"
+      - "SSFR-Kitchen integration (adapter, planner, navigation)"
+      - "7/7 integration tests passing"
+      - "Space-aware navigation strategies"
     next_phases:
+      structure_reuse:
+        name: "Structure Reuse & Learning"
+        status: planned
+        components:
+          - "Cross-task structure reuse"
+          - "Online learning for space selection"
+          - "Multi-robot SSFR coordination"
       real_world:
         name: "Real-World Validation"
         status: planned

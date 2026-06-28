@@ -6,7 +6,7 @@ Fisher 信息度量空间
 """
 
 import numpy as np
-from typing import Dict, Any, Tuple
+from typing import Dict, Any, Tuple, Optional
 
 from ..core.space import CognitiveSpace, register_space
 
@@ -161,4 +161,61 @@ class FisherSpace(CognitiveSpace):
             'fisher_score': float(best_score),
             'predicted_confidence': float(self.confidence[x, y]),
             'predicted_belief': float(self.belief[x, y]),
+        }
+
+    def compute_validity(self, position: Tuple[int, int],
+                        observation: Dict[str, Any],
+                        actual: Optional[Dict[str, Any]] = None) -> float:
+        """
+        Fisher空间的适用性判定
+
+        Fisher空间基于置信度，适用条件：
+        - 高置信度区域：统计学习有效
+        - 低置信度区域：需要更多探索
+        - 观测不足时：置信度低，Fisher优势不明显
+        """
+        x, y = position
+
+        if not (0 <= x < self.width and 0 <= y < self.height):
+            return 0.0
+
+        current_confidence = self.confidence[x, y]
+        current_belief = self.belief[x, y]
+
+        # 高置信度 = Fisher有效
+        # 低置信度 = 需要更多数据
+        if current_confidence > 0.7:
+            # 高置信度：Fisher非常有效
+            validity = 0.7 + 0.3 * min((current_confidence - 0.7) / 0.3, 1.0)
+        elif current_confidence > 0.3:
+            # 中等置信度：Fisher有效但有限
+            validity = 0.4 + 0.3 * ((current_confidence - 0.3) / 0.4)
+        else:
+            # 低置信度：Fisher优势不明显
+            validity = 0.2 + 0.2 * (current_confidence / 0.3)
+
+        # 信念也影响 validity
+        belief_boost = 0.1 * current_belief
+
+        return min(1.0, validity + belief_boost)
+
+    def get_validity_fields(self) -> Dict[str, np.ndarray]:
+        """Fisher空间的有效性场"""
+        validity = np.zeros((self.width, self.height))
+
+        for x in range(self.width):
+            for y in range(self.height):
+                conf = self.confidence[x, y]
+                if conf > 0.7:
+                    v = 0.7 + 0.3 * min((conf - 0.7) / 0.3, 1.0)
+                elif conf > 0.3:
+                    v = 0.4 + 0.3 * ((conf - 0.3) / 0.4)
+                else:
+                    v = 0.2 + 0.2 * (conf / 0.3)
+                validity[x, y] = v
+
+        return {
+            'validity': validity,
+            'confidence': self.confidence.copy(),
+            'belief': self.belief.copy(),
         }

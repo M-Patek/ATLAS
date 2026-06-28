@@ -291,6 +291,40 @@ All notable changes to ATLAS are documented in this file.
 
 ---
 
+## 2026-06-28 — SSFR Kitchen Integration (Application)
+
+- **Type**: T5 (Cross-cutting Application)
+- **Goal**: Apply SSFR to physical kitchen environment for real robot task execution
+- **Done**:
+  - **KitchenSpaceAdapter**: Continuous → discrete mapping for SSFR
+    - World-to-grid coordinate conversion (0.5m resolution)
+    - Obstacle extraction from physical objects
+    - Observation encoding with uncertainty estimation
+    - Action decoding to physical robot actions
+  - **PhysicalSSFR**: SSFR wrapper for physical environments
+    - Automatic grid dimension calculation
+    - Perception with physical state encoding
+    - Competition with actual position feedback
+    - Space validity computation per robot
+  - **SSFRTaskPlanner**: Task execution with SSFR guidance
+    - Task assignment and step execution
+    - Space-aware navigation (Ricci/Fisher/Wasserstein strategies)
+    - SSFR perception at each step
+    - Real-time structure competition and evolution
+  - **Integration Tests**: 7/7 passing
+    - Space adapter, Physical SSFR, Task planner
+    - Navigation, Structure evolution, Space comparison, End-to-end
+  - **Demos**: 4 demonstration scenarios
+    - SSFR perception, Task planning, Structure evolution, Space comparison
+- **Files**:
+  - `experiments/demo_ssfr_kitchen.py` — Integration demos
+  - `experiments/test_ssfr_kitchen.py` — 7 integration tests
+  - `docs/ssfr_kitchen_integration.md` — Integration documentation
+- **Validation**: V3 — 7/7 tests pass, SSFR perceives physical environment, structures evolve
+- **Next**: Structure reuse across tasks, online learning for space selection, multi-robot
+
+---
+
 ## Earlier Changes
 
 - Initial repository structure with 5-layer organization

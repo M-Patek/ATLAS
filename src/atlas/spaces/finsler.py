@@ -7,7 +7,7 @@ Finsler 空间
 """
 
 import numpy as np
-from typing import Dict, Any, Tuple
+from typing import Dict, Any, Tuple, Optional
 
 from ..core.space import CognitiveSpace, register_space
 

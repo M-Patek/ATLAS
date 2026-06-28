@@ -6,7 +6,7 @@ Wasserstein (Optimal Transport) Space
 """
 
 import numpy as np
-from typing import Dict, Any, Tuple
+from typing import Dict, Any, Tuple, Optional
 
 from ..core.space import CognitiveSpace, register_space
 
@@ -34,6 +34,11 @@ class WassersteinSpace(CognitiveSpace):
 
         # 质量分布
         self.mass = np.ones((width, height)) / (width * height)
+
+        # 缓存
+        self._last_obstacles: set = set()
+        self._cost_field_stale = True
+        self._obstacle_cost = np.zeros((width, height))
 
     def compute_distance(self, pos1: Tuple[int, int],
                         pos2: Tuple[int, int]) -> float:
@@ -63,27 +68,58 @@ class WassersteinSpace(CognitiveSpace):
 
     def update_from_observation(self, position: Tuple[int, int],
                                 observation: Dict[str, Any]) -> None:
-        """更新成本场"""
+        """更新成本场（优化版：缓存障碍物）"""
         x, y = position
 
         # 访问位置积累质量
         if 0 <= x < self.width and 0 <= y < self.height:
             self.mass[x, y] += 0.01
 
-        # 障碍物增加成本
+        # 障碍物增加成本（只在障碍物变化时更新）
         if 'obstacles' in observation:
-            for ox, oy in observation['obstacles']:
-                for dx in range(-3, 4):
-                    for dy in range(-3, 4):
-                        nx, ny = ox + dx, oy + dy
-                        if 0 <= nx < self.width and 0 <= ny < self.height:
-                            dist = np.sqrt(dx**2 + dy**2)
-                            self.cost_field[nx, ny] += 0.3 * np.exp(-dist / 2.0)
+            obstacles = set(observation['obstacles'])
+            if obstacles != self._last_obstacles:
+                self._last_obstacles = obstacles
+                self._update_obstacle_cost(obstacles)
+                self._cost_field_stale = True
+
+        # 只在需要时更新成本场
+        if self._cost_field_stale:
+            self.cost_field = np.minimum(5.0,
+                np.ones((self.width, self.height)) + self._obstacle_cost)
+            self._cost_field_stale = False
 
         # 归一化质量
         total_mass = np.sum(self.mass)
         if total_mass > 0:
             self.mass /= total_mass
+
+    def _update_obstacle_cost(self, obstacles: set):
+        """更新障碍物成本（向量化版）"""
+        self._obstacle_cost.fill(0.0)
+
+        if not obstacles:
+            return
+
+        # 预计算 7x7 核
+        dx_grid, dy_grid = np.meshgrid(np.arange(-3, 4), np.arange(-3, 4), indexing='ij')
+        dist_kernel = np.sqrt(dx_grid**2 + dy_grid**2)
+        cost_kernel = 0.3 * np.exp(-dist_kernel / 2.0)
+
+        # 向量化：批量处理障碍物
+        for ox, oy in obstacles:
+            x_start = max(0, ox - 3)
+            x_end = min(self.width, ox + 4)
+            y_start = max(0, oy - 3)
+            y_end = min(self.height, oy + 4)
+
+            kx_start = max(0, 3 - ox)
+            kx_end = min(7, self.width - ox + 3)
+            ky_start = max(0, 3 - oy)
+            ky_end = min(7, self.height - oy + 3)
+
+            self._obstacle_cost[x_start:x_end, y_start:y_end] += \
+                cost_kernel[kx_start:kx_end, ky_start:ky_end]
 
     def get_visualization_fields(self) -> Dict[str, np.ndarray]:
         """可视化数据"""
