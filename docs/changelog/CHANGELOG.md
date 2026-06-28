@@ -10,6 +10,44 @@ tags: [changelog, history]
 
 All notable changes to ATLAS are documented in this file.
 
+## 2026-06-28 — Continuous SSFR: Remove Discrete Grid
+
+- **Type**: T5 (Architecture Refactor)
+- **Goal**: Refactor SSFR to use continuous coordinates instead of discrete grid
+- **Done**:
+  - **ContinuousField**: Sparse sampling + kNN interpolation
+    - Replaces numpy 2D array with sparse sample points
+    - Spatial index for fast nearest-neighbor queries
+    - kNN inverse-distance-weighted interpolation
+    - LRU cache for repeated queries
+  - **ContinuousCognitiveSpace**: Base class for continuous spaces
+    - Position: Tuple[int, int] → Tuple[float, float]
+    - Neighbors: 4/8-connected → 16-direction continuous sampling
+    - Distance: grid path integral → continuous path integral
+    - No fixed grid boundaries
+  - **Continuous Spaces Implemented**:
+    - ContinuousEuclideanSpace: baseline
+    - ContinuousRicciSpace: curvature, uncertainty, familiarity fields
+    - ContinuousFisherSpace: belief, confidence fields
+    - ContinuousWassersteinSpace: cost, mass fields
+  - **ContinuousSSFR**: SSFR core without grid
+    - StructurePool with continuous positions
+    - Perceive/Compete/Evolve with float coordinates
+    - Structure reuse based on Euclidean distance
+  - **Kitchen Integration**: ContinuousPhysicalSSFR
+    - Direct physical position encoding (no grid conversion)
+    - Continuous space validity computation
+    - Task planning with continuous navigation
+- **Files**:
+  - `src/atlas/spaces/continuous.py` — Continuous spaces
+  - `src/atlas/spaces/continuous_ssfr.py` — Continuous SSFR core
+  - `experiments/test_continuous_ssfr.py` — 4 integration tests
+  - `docs/continuous_ssfr.md` — Documentation
+- **Validation**: V3 — 4/4 tests pass, continuous field query works, kitchen integration works
+- **Next**: Performance optimization (R-tree, KD-tree), GPU acceleration
+
+---
+
 ## 2026-06-27 — SSFR-Information Geometry: Corrected Relationship
 
 - **Type**: T5 (Theoretical Correction)
