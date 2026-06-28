@@ -1,6 +1,6 @@
 # ATLAS: Atlas of Technologies for Learning Autonomous Systems
 
-**可插拔认知空间框架**
+**可插拔认知空间框架** | [English](#english)
 
 ```
 架构设计: 认知空间作为核心抽象
@@ -15,19 +15,17 @@
 │  - Fisher Space: 信息几何，g = 1/confidence                  │
 │  - Wasserstein Space: 最优传输成本                           │
 │  - Finsler Space: 非对称度量                                 │
+│  - Continuous Space: 连续坐标 (Tuple[float, float])         │
 ├─────────────────────────────────────────────────────────────┤
-│  SSFR Layer (Enhanced)                                        │
+│  SSFR Layer (Structure Self-Discovery & Reuse)               │
 │  - StructureHypothesis: 结构假设（可验证、可竞争、可演化）     │
 │  - StructurePool: 结构竞争池（竞争、选择、演化）              │
 │  - MultiSpaceRepresentation: 多空间联合表示                     │
 ├─────────────────────────────────────────────────────────────┤
-│  Meta Layer (UCB Selection)                                   │
-│  - 场景感知 → 结构选择 → 空间切换                             │
-│  - UCB / Contextual Bandit                                   │
-├─────────────────────────────────────────────────────────────┤
-│  World Model Layer                                            │
-│  - 根据观测更新空间                                            │
-│  - 预测空间的演化                                              │
+│  Kitchen Layer (Physical Environment)                         │
+│  - ContinuousPhysicalSSFR: 物理世界连续SSFR                    │
+│  - ContinuousSSFRTaskPlanner: 任务规划器                     │
+│  - pymunk-based 2D physics simulation                         │
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -65,50 +63,57 @@ if result.success:
     print(f"Path found: {len(result.path)} steps")
 ```
 
-### 2. 增强版 SSFR
+### 2. 连续空间 SSFR
 
 ```python
-from atlas.core.ssfr_enhanced import SSFREnhanced
+from atlas.spaces.continuous_ssfr import ContinuousSSFR
 
-# 创建增强版 SSFR
-ssfr = SSFREnhanced(
-    width=40,
-    height=20,
+# 创建连续空间 SSFR（无需离散网格）
+ssfr = ContinuousSSFR(
     space_names=['ricci', 'fisher', 'wasserstein', 'conformal']
 )
 
-# 单步执行：感知 + 竞争 + 演化
-result = ssfr.step(
-    position=(5, 5),
+# 感知：使用连续坐标 (float, float)
+hypotheses = ssfr.perceive(
+    position=(1.0, 2.0),
     observation={
-        'position': (5, 5),
-        'obstacles': [(3, 3)],
-        'goal_position': (35, 15)
-    },
-    actual={...}  # 实际结果用于验证
+        'position': (1.0, 2.0),
+        'goal_position': (5.0, 5.0),
+        'obstacles': [(2.0, 2.0)],
+        'uncertainty': 0.3,
+    }
 )
 
-# 获取最佳结构
-best = ssfr.get_best_structures(n=3)
-for hyp in best:
-    print(f"{hyp.name}: fitness={hyp.fitness:.4f}")
+# 竞争
+winner = ssfr.compete(observation, actual)
+
+# 演化
+new_structures = ssfr.evolve()
 ```
 
-### 3. Meta-SSFR 集成
+### 3. 物理厨房集成
 
 ```python
-from experiments.meta_ssfr_atlas import MetaSSFR
+from experiments.tests.test_continuous_ssfr import (
+    ContinuousPhysicalSSFR, ContinuousSSFRTaskPlanner
+)
+from atlas.kitchen import create_demo_kitchen
 
-# 创建 Meta-SSFR
-meta = MetaSSFR(width=10, height=10)
+# 创建物理厨房
+kitchen = create_demo_kitchen()
+robot_id = list(kitchen.robots.keys())[0]
 
-# 使用 Meta-SSFR 求解
-action = meta.solve(state)
-meta.update(state, action, reward, next_state)
+# 创建连续SSFR（直接物理坐标）
+physical_ssfr = ContinuousPhysicalSSFR(kitchen)
+planner = ContinuousSSFRTaskPlanner(physical_ssfr)
 
-# 查看统计
-stats = meta.get_stats()
-print(f"Space usage: {stats['usage']}")
+# 分配任务
+planner.assign_task(robot_id, 'make_coffee')
+
+# 执行
+for _ in range(100):
+    kitchen.step()
+    result = planner.step(robot_id)
 ```
 
 ### 4. 对比实验
@@ -151,6 +156,15 @@ print(experiment.get_summary())
 | `wasserstein` | 传输成本 | 资源分配 |
 | `finsler` | 非对称度量 | 习惯建模 |
 
+### 连续空间 (NEW)
+
+| 空间 | 特性 | 适用场景 |
+|------|------|----------|
+| `continuous_ricci` | 稀疏采样 + kNN插值 | 物理世界导航 |
+| `continuous_fisher` | 连续置信度场 | 连续状态估计 |
+| `continuous_wasserstein` | 连续成本场 | 连续资源分配 |
+| `continuous_euclidean` | 基线 | 连续坐标基线 |
+
 ### 复合空间
 
 | 空间 | 组合方式 | 适用场景 |
@@ -174,28 +188,28 @@ print(experiment.get_summary())
 atlas/
 ├── core/                      # 核心框架
 │   ├── space.py              # CognitiveSpace 抽象
-│   ├── world_model.py        # WorldModel 抽象
 │   ├── solver.py             # GeodesicSolver
 │   ├── experiment.py         # Experiment 框架
 │   ├── registry.py           # 空间注册表
-│   └── ssfr_enhanced.py     # 增强版 SSFR (NEW)
+│   ├── replanning.py         # D* Lite 增量规划
+│   └── ssfr_enhanced.py     # 增强版 SSFR
 ├── spaces/                    # 基础空间实现
-│   ├── euclidean.py
-│   ├── ricci.py
-│   ├── conformal.py
-│   ├── fisher.py
-│   ├── wasserstein.py
-│   ├── finsler.py
-│   ├── temporal.py
-│   ├── composite.py          # Product/Hierarchical/Mixed
-│   ├── grid3d.py
-│   └── solver3d.py
-├── exploration/               # 探索功能
-│   └── ricci_attention.py
-├── navigation/                # 导航功能
-│   └── conformal_metric.py
-├── integration/               # 集成系统
-│   └── world_model_space.py
+│   ├── euclidean.py          # 欧氏空间（离散网格）
+│   ├── ricci.py              # Ricci流空间
+│   ├── conformal.py          # 共形空间
+│   ├── fisher.py             # Fisher信息几何
+│   ├── wasserstein.py        # Wasserstein空间
+│   ├── finsler.py            # Finsler空间
+│   ├── continuous.py         # 连续空间基类（NEW）
+│   ├── continuous_ssfr.py    # 连续SSFR核心（NEW）
+│   ├── continuous_optimized.py # 优化版连续SSFR（NEW）
+│   ├── temporal.py           # 时序空间
+│   ├── composite.py          # 复合空间
+│   ├── grid3d.py             # 3D网格空间
+│   └── solver3d.py           # 3D求解器
+├── kitchen/                   # 物理厨房环境
+│   ├── __init__.py
+│   └── controller.py         # 厨房控制器
 ├── learning/                  # 学习模块
 │   ├── bayesian_optimizer.py
 │   ├── meta_learner.py
@@ -205,12 +219,31 @@ atlas/
 │   ├── space_visualizer.py
 │   ├── path_animator.py
 │   └── comparison_plots.py
-└── experiments/               # 实验脚本
-    ├── compare_spaces.py
-    ├── test_space_updates.py
-    ├── test_composite_spaces.py
-    ├── test_ssfr_enhanced.py  # 增强版 SSFR 测试 (NEW)
-    └── meta_ssfr_atlas.py     # Meta-SSFR 集成
+└── research/                  # 理论研究
+    ├── ssfr_information_geometry.py
+    ├── ssfr_continuous.py
+    ├── ssfr_hierarchical.py
+    └── ab_testing.py
+
+experiments/
+├── tests/                     # 测试脚本（16个）
+│   ├── test_continuous_ssfr.py
+│   ├── test_ssfr_enhanced.py
+│   ├── test_structure_reuse_v2.py
+│   └── ...
+├── demos/                     # 演示脚本（6个）
+│   ├── demo_physical_kitchen.py
+│   └── ...
+├── benchmarks/                # 基准测试（3个）
+│   ├── benchmark_continuous_ssfr.py
+│   └── ...
+└── research/                  # 研究分析（2个）
+    ├── meta_ssfr_atlas.py
+    └── meta_ssfr_enhanced.py
+
+tests/                         # pytest 测试
+├── test_core.py
+└── test_spaces.py
 ```
 
 ---
@@ -219,12 +252,15 @@ atlas/
 
 ### 核心改进
 
-| 特性 | 传统 SSFR | 增强版 SSFR |
-|------|-----------|-------------|
-| **结构定义** | 聚类结果 | 可验证假设 |
-| **表示方式** | 单空间 | 多空间联合 |
-| **存储方式** | 静态存储 | 动态竞争 |
-| **更新方式** | 固定不变 | 演化优化 |
+| 特性 | 传统 SSFR | 增强版 SSFR | 连续 SSFR (NEW) |
+|------|-----------|-------------|-----------------|
+| **位置表示** | 离散网格 (int, int) | 离散网格 | 连续坐标 (float, float) |
+| **场数据** | numpy 2D array | numpy 2D array | 稀疏采样 + kNN插值 |
+| **距离计算** | 网格路径 | 网格路径 | 连续路径积分 |
+| **边界** | 固定网格 | 固定网格 | 无限制 |
+| **结构定义** | 聚类结果 | 可验证假设 | 可验证假设 |
+| **表示方式** | 单空间 | 多空间联合 | 多空间联合 |
+| **存储方式** | 静态存储 | 动态竞争 | 动态竞争 |
 
 ### 核心组件
 
@@ -284,8 +320,8 @@ class MySpace(CognitiveSpace):
 
 ```python
 space.update_from_observation(
-    position=(10, 10),
-    observation={'obstacles': [(20, 10)], 'goal_position': (35, 10)}
+    position=(10.0, 10.0),  # 连续坐标
+    observation={'obstacles': [(20.0, 10.0)], 'goal_position': (35.0, 10.0)}
 )
 ```
 
