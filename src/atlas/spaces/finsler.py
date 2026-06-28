@@ -158,3 +158,50 @@ class FinslerSpace(CognitiveSpace):
             'familiarity': self.familiarity.copy(),
             'target_field': self.target_field.copy(),
         }
+
+    def predict_next_state(self, position: Tuple[int, int],
+                           observation: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        基于 Finsler 场数据预测下一步
+
+        预测逻辑：
+        - 高熟悉度 = 更"便宜"（非对称：离开熟悉区域成本高）
+        - 朝向目标 = 更"便宜"
+        """
+        from ..core.space import neighbors_4
+
+        goal = observation.get('goal_position')
+        obstacles = set(observation.get('obstacles', []))
+
+        best_pos = position
+        best_score = float('-inf')
+
+        for nx, ny in neighbors_4(position, self.width, self.height):
+            if (nx, ny) in obstacles:
+                continue
+
+            # Finsler 特有的评分：高熟悉度 + 朝向目标 = 好
+            familiarity_bonus = self.familiarity[nx, ny]
+            target_bonus = self.target_field[nx, ny]
+
+            # 非对称惩罚：离开当前熟悉区域
+            current_familiarity = self.familiarity[position[0], position[1]]
+            new_familiarity = self.familiarity[nx, ny]
+            asymmetry_penalty = -self.asymmetry * max(0, current_familiarity - new_familiarity)
+
+            score = familiarity_bonus + target_bonus + asymmetry_penalty
+
+            if score > best_score:
+                best_score = score
+                best_pos = (nx, ny)
+
+        x, y = best_pos
+        return {
+            'predicted_position': best_pos,
+            'predicted_cost': self.compute_distance(position, best_pos),
+            'predicted_uncertainty': 1.0 - self.familiarity[x, y],
+            'passable': best_pos != position,
+            'finsler_score': float(best_score),
+            'predicted_familiarity': float(self.familiarity[x, y]),
+            'predicted_target_field': float(self.target_field[x, y]),
+        }

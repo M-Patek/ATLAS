@@ -202,6 +202,54 @@ class CognitiveSpace(ABC):
             'metric': np.ones((self.width, self.height)),
         }
 
+    def predict_next_state(self, position: Tuple[int, int],
+                           observation: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        基于当前空间场数据预测下一步状态
+
+        这是 SSFR 结构假设的核心预测能力。
+        每个空间基于自己的场数据预测：
+        - 前方是否可通行
+        - 到达目标的代价
+        - 观测不确定性
+
+        Args:
+            position: 当前位置
+            observation: 当前观测（包含目标、障碍物等）
+
+        Returns:
+            预测结果字典，至少包含:
+            - 'predicted_position': 预测的下一步位置
+            - 'predicted_cost': 预测的移动代价
+            - 'predicted_uncertainty': 预测位置的不确定性
+            - 'passable': 是否可通行
+        """
+        # 默认实现：基于当前位置和目标做简单预测
+        goal = observation.get('goal_position')
+        obstacles = set(observation.get('obstacles', []))
+
+        # 找最佳邻居（最小距离方向）
+        best_pos = position
+        best_cost = float('inf')
+
+        for nx, ny in neighbors_4(position, self.width, self.height):
+            if (nx, ny) in obstacles:
+                continue
+            if goal:
+                cost = self.compute_distance((nx, ny), goal)
+            else:
+                cost = self.compute_distance(position, (nx, ny))
+            if cost < best_cost:
+                best_cost = cost
+                best_pos = (nx, ny)
+
+        return {
+            'predicted_position': best_pos,
+            'predicted_cost': best_cost,
+            'predicted_uncertainty': 0.5,
+            'passable': best_pos != position,
+        }
+
     def get_statistics(self) -> Dict[str, float]:
         """获取空间统计信息"""
         return {

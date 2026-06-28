@@ -124,18 +124,123 @@ class StructureHypothesis:
         return result
 
     def _generate_prediction(self, observation: Dict) -> Dict:
-        """基于表示生成预测"""
+        """
+        基于表示生成预测
+
+        核心改进：每个空间表示必须包含真正的预测器，
+        调用空间的 predict_next_state 方法生成有意义的预测。
+        """
         predictions = {}
 
-        # 每个空间表示生成预测
         for space_name, rep in self.representations.items():
-            if isinstance(rep, dict) and 'predictor' in rep:
-                predictions[space_name] = rep['predictor'](observation)
+            if isinstance(rep, dict):
+                # 情况1: 表示中包含空间实例和观测数据
+                if 'space_instance' in rep and 'observation' in rep:
+                    space = rep['space_instance']
+                    obs = rep['observation']
+                    position = obs.get('position', (0, 0))
+                    try:
+                        pred = space.predict_next_state(position, obs)
+                        predictions[space_name] = pred
+                    except Exception as e:
+                        # 回退到简单预测
+                        predictions[space_name] = self._fallback_prediction(obs)
+
+                # 情况2: 表示中包含预计算的预测
+                elif 'predictor' in rep and callable(rep['predictor']):
+                    predictions[space_name] = rep['predictor'](observation)
+
+                # 情况3: 表示中包含预测结果缓存
+                elif 'prediction' in rep:
+                    predictions[space_name] = rep['prediction']
+
+                else:
+                    # 默认回退
+                    predictions[space_name] = self._fallback_prediction(observation)
             else:
-                # 默认：返回表示本身作为预测
-                predictions[space_name] = rep
+                predictions[space_name] = self._fallback_prediction(observation)
+
+        # 多空间融合预测：如果多个空间都有预测，取加权平均
+        if len(predictions) > 1:
+            predictions['_fused'] = self._fuse_predictions(predictions)
 
         return predictions
+
+    def _fallback_prediction(self, observation: Dict) -> Dict:
+        """回退预测：基于观测做简单推断"""
+        position = observation.get('position', (0, 0))
+        goal = observation.get('goal_position')
+
+        # 简单预测：朝向目标移动一步
+        predicted_pos = position
+        if goal:
+            dx = np.sign(goal[0] - position[0])
+            dy = np.sign(goal[1] - position[1])
+            if abs(goal[0] - position[0]) > abs(goal[1] - position[1]):
+                predicted_pos = (position[0] + dx, position[1])
+            else:
+                predicted_pos = (position[0], position[1] + dy)
+
+        return {
+            'predicted_position': predicted_pos,
+            'predicted_cost': 1.0,
+            'predicted_uncertainty': 0.5,
+            'passable': True,
+        }
+
+    def _fuse_predictions(self, predictions: Dict[str, Dict]) -> Dict:
+        """融合多个空间的预测"""
+        # 收集所有预测的位置
+        positions = []
+        weights = []
+
+        for space_name, pred in predictions.items():
+            if space_name.startswith('_'):
+                continue
+            if 'predicted_position' in pred:
+                positions.append(pred['predicted_position'])
+                # 权重基于不确定性（越低越好）
+                unc = pred.get('predicted_uncertainty', 0.5)
+                weights.append(1.0 / (1.0 + unc))
+
+        if not positions:
+            return self._fallback_prediction({})
+
+        # 加权投票选择位置
+        weights = np.array(weights)
+        weights /= weights.sum()
+
+        # 找多数同意的位置
+        pos_votes = {}
+        for pos, w in zip(positions, weights):
+            pos_key = pos
+            pos_votes[pos_key] = pos_votes.get(pos_key, 0) + w
+
+        best_pos = max(pos_votes.keys(), key=lambda k: pos_votes[k])
+        confidence = pos_votes[best_pos]
+
+        # 融合其他字段
+        fused_cost = np.mean([
+            pred.get('predicted_cost', 1.0)
+            for pred in predictions.values()
+            if not pred.get('_fused')
+        ]) if predictions else 1.0
+
+        fused_unc = np.mean([
+            pred.get('predicted_uncertainty', 0.5)
+            for pred in predictions.values()
+            if not pred.get('_fused')
+        ]) if predictions else 0.5
+
+        return {
+            'predicted_position': best_pos,
+            'predicted_cost': float(fused_cost),
+            'predicted_uncertainty': float(fused_unc),
+            'passable': confidence > 0.3,
+            'fusion_confidence': float(confidence),
+            'agreeing_spaces': sum(1 for p in positions if p == best_pos),
+            'total_spaces': len(positions),
+        }
 
     def _compute_prediction_error(self, prediction: Dict, actual: Dict) -> float:
         """计算预测误差"""
@@ -666,18 +771,38 @@ class SSFREnhanced:
                                          representation: Dict,
                                          observation: Dict) -> Optional[StructureHypothesis]:
         """从单个空间表示生成假设"""
+        # 获取空间实例
+        space = self.spaces.get(space_name)
+
         # 提取关键特征
         features = self.multi_space._extract_structure_features(representation, observation)
 
-        # 构建假设
+        # 生成预测：调用空间的 predict_next_state
+        prediction = None
+        if space:
+            try:
+                position = observation.get('position', (0, 0))
+                prediction = space.predict_next_state(position, observation)
+            except Exception as e:
+                pass  # 某些空间可能不支持预测
+
+        # 构建假设：表示中包含空间实例和观测，供后续预测使用
         hyp = StructureHypothesis(
             id=str(uuid.uuid4())[:8],
             name=f"{space_name}_struct",
-            representations={space_name: representation},
+            representations={
+                space_name: {
+                    'space_instance': space,
+                    'observation': observation,
+                    'features': features,
+                    'prediction': prediction,
+                }
+            },
             context={
                 'space_type': space_name,
                 'features': features,
                 'observation': observation,
+                'has_prediction': prediction is not None,
             },
             created_at=self.step_count
         )

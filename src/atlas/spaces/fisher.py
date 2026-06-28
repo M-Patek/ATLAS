@@ -110,3 +110,55 @@ class FisherSpace(CognitiveSpace):
             'confidence': self.confidence.copy(),
             'fisher_metric': 1.0 / np.maximum(0.01, self.confidence),
         }
+
+    def predict_next_state(self, position: Tuple[int, int],
+                           observation: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        基于 Fisher 场数据预测下一步
+
+        预测逻辑：
+        - 高置信度 = 高 Fisher 信息 = 更"便宜"的移动
+        - 高信念 = 更可信的区域
+        """
+        from ..core.space import neighbors_4
+
+        goal = observation.get('goal_position')
+        obstacles = set(observation.get('obstacles', []))
+
+        best_pos = position
+        best_score = float('-inf')
+
+        for nx, ny in neighbors_4(position, self.width, self.height):
+            if (nx, ny) in obstacles:
+                continue
+
+            # Fisher 特有的评分：高置信度 + 高信念 = 好
+            confidence_bonus = self.confidence[nx, ny]
+            belief_bonus = self.belief[nx, ny]
+
+            # 低 Fisher metric = 便宜
+            fisher_metric = 1.0 / max(0.01, self.confidence[nx, ny])
+            cost_penalty = -fisher_metric * 0.1
+
+            # 目标导向
+            goal_bonus = 0.0
+            if goal:
+                dist_to_goal = np.sqrt((nx - goal[0])**2 + (ny - goal[1])**2)
+                goal_bonus = -dist_to_goal * 0.1
+
+            score = confidence_bonus + belief_bonus + cost_penalty + goal_bonus
+
+            if score > best_score:
+                best_score = score
+                best_pos = (nx, ny)
+
+        x, y = best_pos
+        return {
+            'predicted_position': best_pos,
+            'predicted_cost': self.compute_distance(position, best_pos),
+            'predicted_uncertainty': 1.0 - self.confidence[x, y],
+            'passable': best_pos != position,
+            'fisher_score': float(best_score),
+            'predicted_confidence': float(self.confidence[x, y]),
+            'predicted_belief': float(self.belief[x, y]),
+        }

@@ -91,3 +91,51 @@ class WassersteinSpace(CognitiveSpace):
             'cost_field': self.cost_field.copy(),
             'mass_distribution': self.mass.copy(),
         }
+
+    def predict_next_state(self, position: Tuple[int, int],
+                           observation: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        基于 Wasserstein 场数据预测下一步
+
+        预测逻辑：
+        - 低成本区域 = 更"便宜"的移动
+        - 高质量区域 = 更"稳定"的移动
+        """
+        from ..core.space import neighbors_4
+
+        goal = observation.get('goal_position')
+        obstacles = set(observation.get('obstacles', []))
+
+        best_pos = position
+        best_score = float('-inf')
+
+        for nx, ny in neighbors_4(position, self.width, self.height):
+            if (nx, ny) in obstacles:
+                continue
+
+            # Wasserstein 特有的评分：低成本 + 高质量 = 好
+            cost_penalty = -self.cost_field[nx, ny]
+            mass_bonus = self.mass[nx, ny]
+
+            # 目标导向
+            goal_bonus = 0.0
+            if goal:
+                dist_to_goal = np.sqrt((nx - goal[0])**2 + (ny - goal[1])**2)
+                goal_bonus = -dist_to_goal * 0.1
+
+            score = cost_penalty + mass_bonus + goal_bonus
+
+            if score > best_score:
+                best_score = score
+                best_pos = (nx, ny)
+
+        x, y = best_pos
+        return {
+            'predicted_position': best_pos,
+            'predicted_cost': self.compute_distance(position, best_pos),
+            'predicted_uncertainty': self.cost_field[x, y] / max(1.0, np.max(self.cost_field)),
+            'passable': best_pos != position,
+            'wasserstein_score': float(best_score),
+            'predicted_cost_field': float(self.cost_field[x, y]),
+            'predicted_mass': float(self.mass[x, y]),
+        }

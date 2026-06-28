@@ -163,3 +163,56 @@ class RicciSpace(CognitiveSpace):
             'total_visits': int(np.sum(self.visit_count)),
         })
         return stats
+
+    def predict_next_state(self, position: Tuple[int, int],
+                           observation: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        基于 Ricci 场数据预测下一步
+
+        预测逻辑：
+        - 高曲率区域 = 高信息密度 = 更"贵"的移动
+        - 高不确定性区域 = 需要更多探索
+        - 熟悉度高的区域 = 更"便宜"的移动
+        """
+        from ..core.space import neighbors_4
+
+        goal = observation.get('goal_position')
+        obstacles = set(observation.get('obstacles', []))
+
+        best_pos = position
+        best_score = float('-inf')
+
+        for nx, ny in neighbors_4(position, self.width, self.height):
+            if (nx, ny) in obstacles:
+                continue
+
+            # Ricci 特有的评分：低曲率 + 高熟悉度 = 好
+            curvature_penalty = -abs(self.curvature[nx, ny]) * self.curvature_scale
+            familiarity_bonus = self.familiarity[nx, ny]
+            uncertainty_penalty = -self.uncertainty[nx, ny]
+
+            # 目标导向
+            goal_bonus = 0.0
+            if goal:
+                dist_to_goal = np.sqrt((nx - goal[0])**2 + (ny - goal[1])**2)
+                goal_bonus = -dist_to_goal * 0.1  # 越近越好
+
+            score = curvature_penalty + familiarity_bonus + uncertainty_penalty + goal_bonus
+
+            if score > best_score:
+                best_score = score
+                best_pos = (nx, ny)
+
+        # 预测不确定性基于曲率
+        x, y = best_pos
+        predicted_uncertainty = self.uncertainty[x, y]
+
+        return {
+            'predicted_position': best_pos,
+            'predicted_cost': self.compute_distance(position, best_pos),
+            'predicted_uncertainty': float(predicted_uncertainty),
+            'passable': best_pos != position,
+            'ricci_score': float(best_score),
+            'predicted_curvature': float(self.curvature[x, y]),
+            'predicted_familiarity': float(self.familiarity[x, y]),
+        }

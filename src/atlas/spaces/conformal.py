@@ -135,3 +135,50 @@ class ConformalSpace(CognitiveSpace):
             'conformal_factor': self.conformal_factor.copy(),
             'metric': self.conformal_factor.copy(),
         }
+
+    def predict_next_state(self, position: Tuple[int, int],
+                           observation: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        基于 Conformal 场数据预测下一步
+
+        预测逻辑：
+        - 低共形因子 = 吸引子附近 = 更"便宜"
+        - 高共形因子 = 排斥子附近 = 更"贵"
+        """
+        from ..core.space import neighbors_4
+
+        goal = observation.get('goal_position')
+        obstacles = set(observation.get('obstacles', []))
+
+        best_pos = position
+        best_score = float('-inf')
+
+        for nx, ny in neighbors_4(position, self.width, self.height):
+            if (nx, ny) in obstacles:
+                continue
+
+            # Conformal 特有的评分：低共形因子 = 好
+            conformal_penalty = -self.conformal_factor[nx, ny]
+
+            # 目标导向（Conformal 对目标最敏感）
+            goal_bonus = 0.0
+            if goal:
+                dist_to_goal = np.sqrt((nx - goal[0])**2 + (ny - goal[1])**2)
+                # Conformal 空间强烈偏好目标方向
+                goal_bonus = -dist_to_goal * 0.3
+
+            score = conformal_penalty + goal_bonus
+
+            if score > best_score:
+                best_score = score
+                best_pos = (nx, ny)
+
+        x, y = best_pos
+        return {
+            'predicted_position': best_pos,
+            'predicted_cost': self.compute_distance(position, best_pos),
+            'predicted_uncertainty': self.conformal_factor[x, y] - 1.0,
+            'passable': best_pos != position,
+            'conformal_score': float(best_score),
+            'predicted_conformal_factor': float(self.conformal_factor[x, y]),
+        }
