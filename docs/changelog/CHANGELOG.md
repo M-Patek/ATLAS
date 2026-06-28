@@ -10,6 +10,56 @@ tags: [changelog, history]
 
 All notable changes to ATLAS are documented in this file.
 
+## 2026-06-28 — Round 2: Remove Obsolete Discrete Kitchen & Duplicate Tests
+
+- **Type**: T5 (Cross-cutting Change)
+- **Goal**: Remove obsolete discrete kitchen integration and duplicate test files
+- **Done**:
+  - **Deleted obsolete discrete kitchen files**:
+    - `experiments/demos/demo_ssfr_kitchen.py` — 被 `test_continuous_ssfr.py` 中的 `ContinuousPhysicalSSFR` 替代
+    - `experiments/tests/test_ssfr_kitchen.py` — 离散网格适配器已过时
+  - **Deleted duplicate test files**:
+    - `test_structure_reuse.py` → 功能与 `test_structure_reuse_v2.py` 重叠
+    - `test_reuse_rate.py` → 与 `test_structure_reuse_v2.py` 重叠
+  - **Deleted obsolete analysis files**:
+    - `test_first_update.py` — 一次性初始化开销测试
+    - `test_spike_analysis.py` — 一次性性能尖峰分析
+    - `test_astar_limits.py` — 极限测试，已被压力测试覆盖
+- **Files**: `experiments/*`
+- **Validation**: V3 — 文件数从148→141，实验目录结构清晰
+- **Left for next time**: 离散空间 (euclidean/ricci/fisher等) 的逐步迁移
+
+---
+
+## 2026-06-28 — Deep Repository Cleanup & Reorganization
+
+- **Type**: T5 (Cross-cutting Change)
+- **Goal**: Deep clean and reorganize repository structure
+- **Done**:
+  - **Deleted `__pycache__`**: 11 directories removed
+  - **Deleted unused modules**:
+    - `src/atlas/cognitive_arch/` (2314 lines, zero references)
+    - `src/atlas/predictive_system/` (3477 lines, zero references)
+  - **Cleaned imports**: Removed unused `exploration`, `navigation`, `integration` imports from `spaces/__init__.py` and `__init__.py`
+  - **Deleted empty files**: `benchmark_output.txt`, `benchmark_result.txt`
+  - **Reorganized `experiments/`**:
+    - `tests/` — 22 test files
+    - `demos/` — 6 demo files
+    - `benchmarks/` — 3 benchmark files
+    - `research/` — 2 research files
+  - **Deleted duplicate files**:
+    - `test_ultra_complex_benchmark.py` → merged into `test_complex_benchmark.py`
+    - `test_extreme_stress.py` → merged into `test_complex_benchmark.py`
+    - `test_pool_pressure.py` → merged into `test_pressure_benchmark.py`
+    - `test_realistic_stress.py` → merged into `test_pressure_benchmark.py`
+  - **Created `tests/`**: Proper pytest structure with `test_core.py` and `test_spaces.py`
+  - **Updated `.gitignore`**: Added benchmark output files
+- **Files**: `src/atlas/__init__.py`, `src/atlas/spaces/__init__.py`, `experiments/*`, `tests/*`
+- **Validation**: V3 — File count reduced from 216 to 148, all imports verified
+- **Left for next time**: Remove remaining unused `exploration/`, `navigation/`, `integration/` modules if confirmed unused
+
+---
+
 ## 2026-06-28 — Continuous SSFR: Remove Discrete Grid
 
 - **Type**: T5 (Architecture Refactor)

@@ -43,6 +43,8 @@ Thumbs.db
 # Project specific
 outputs/
 results/
+benchmark_output.txt
+benchmark_result.txt
 *.png
 *.jpg
 *.jpeg

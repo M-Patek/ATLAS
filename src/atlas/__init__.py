@@ -12,17 +12,6 @@ from . import core
 # 空间实现 - 各种认知空间
 from . import spaces
 
-# 功能模块
-from . import exploration
-from . import navigation
-from . import integration
-
-# 可视化（可选）
-try:
-    from . import visualization
-except ImportError:
-    visualization = None  # matplotlib 未安装
-
 # 学习模块（可选）
 try:
     from . import learning
@@ -32,9 +21,5 @@ except ImportError:
 __all__ = [
     "core",
     "spaces",
-    "exploration",
-    "navigation",
-    "integration",
-    "visualization",
     "learning",
 ]

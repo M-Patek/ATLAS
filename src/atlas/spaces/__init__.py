@@ -32,9 +32,4 @@ from . import (
     grid3d,     # 3D网格空间
 )
 
-# 导入功能模块中的空间
-from ..exploration import ricci_attention
-from ..navigation import conformal_metric
-from ..integration import world_model_space
-
 __all__ = []
