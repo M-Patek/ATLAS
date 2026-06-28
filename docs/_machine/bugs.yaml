@@ -1,0 +1,14 @@
+# ATLAS Bug Index (Machine-Readable)
+
+last_updated: 2026-06-27
+next_id: 1
+
+bugs: []
+  # Template for bug entries:
+  # - id: 1
+  #   session_date: "2026-06-27"
+  #   file: "docs/subsystems/XX-topic.md"
+  #   one_liner: "Brief description of the issue"
+  #   subsystem: "XX-topic"
+  #   root_cause: "category"
+  #   status: "open|fixed|wontfix"

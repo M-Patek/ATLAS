@@ -1,81 +1,109 @@
-# ATLAS Agent Protocol
+# AGENTS.md — ATLAS Agent Boot Protocol
 
-Thin import of DVAS `@AGENTS.md` protocol adapted for knowledge base.
+> For Claude Code, Cursor, Copilot, Gemini CLI, and compatible AI agents.
+> This file is auto-loaded on session start. Do not rename.
+>
+> **ATLAS** = Atlas of Technologies for Learning Autonomous Systems
 
-## Quick Start
+---
 
-1. **Read**: `llms.txt` → `docs/INDEX.md` → target subsystem
-2. **Navigate**: `docs/<NN>-<layer>/index.md` for layer overview
-3. **Deep dive**: `docs/<layer>/<NN>-<topic>.md` for specific topic
-4. **Status**: `docs/_machine/status.yaml`
+## PROTOCOL
 
-## Directory Convention
+### START — Session Initialization
 
 ```
-atlas/
-├── AGENTS.md              # This file
-├── llms.txt               # Quick navigation for LLMs
-├── docs/
-│   ├── INDEX.md           # Doc entry point
-│   ├── _machine/          # Status & planning
-│   ├── 01-foundation/     # Layer 1: Models
-│   ├── 02-annotation/     # Layer 2: Annotation
-│   ├── 03-perception/     # Layer 3: Algorithms
-│   ├── 04-data-ecosystem/ # Layer 4: Data & Hardware
-│   └── 05-integration/    # Layer 5: System Integration
-└── references/            # Papers, datasets, tools
+READ docs/INDEX.md
+├── Quick Map → route to functional module
+├── Available Spaces → note target space type
+└── Experiment Framework → if running comparisons
+
+IF touching space implementations:
+    READ src/atlas/spaces/NN-*.py FOR EACH target:
+    ├── compute_distance implementation
+    ├── get_heuristic implementation  
+    └── update_from_observation logic
+
+IF task spans 3+ spaces:
+    SPAWN Explore sub-agent
 ```
 
-## File Naming
+### EXEC — During Work
 
-- **Folders**: `NN-name/` — zero-padded number for ordering
-- **Files**: `NN-topic-name.md` — kebab-case, machine-friendly
-- **Index**: Each layer has `index.md` as entry point
+| Trigger | Action |
+|---------|--------|
+| Add new space | Update `src/atlas/spaces/__init__.py`, register with `@register_space` |
+| Add new experiment | Place in `experiments/`, import in docs |
+| Modify cross-space content | Note in CHANGELOG which spaces affected |
+| Performance regression | Run `experiments/compare_spaces.py` to verify |
 
-## Cross-Reference Format
+### EXIT — Session Termination
 
-Use relative paths for Agent traceability:
+**Step 1: Classify**
 
+| Change Pattern | Type | Checklist | Validate |
+|---------------|------|-----------|----------|
+| `.md`, `.txt`, typo | T1 | Nothing | V0 — skip |
+| Single space update | T2 | CHANGELOG + test | V1 — consistency |
+| New space implementation | T3 | CHANGELOG + STATUS + compare test | V2 |
+| Framework change | T4 | CHANGELOG + STATUS + all spaces test | V3 |
+| Cross-cutting change | T5 | FULL + all spaces update | V3 |
+
+**Step 2: Execute Checklist**
+
+| Checklist | Do |
+|-----------|-----|
+| LIGHT (T1) | Nothing |
+| STANDARD (T2) | CHANGELOG + run tests |
+| FULL (T3/T4) | CHANGELOG + STATUS + space tests |
+| FULL+ (T5) | FULL + all spaces review + registry update |
+
+**Step 3: CHANGELOG Entry**
+
+Template:
 ```markdown
-See [VLA architecture](../01-foundation/03-vla.md#architecture)
-Input from [Ego collection](../04-data-ecosystem/01-ego-collection.md)
+### Session — <summary>
+
+- **Type**: T<N>
+- **Goal**: <why>
+- **Done**:
+  - <change 1>
+  - <change 2>
+- **Files**: <paths>
+- **Validation**: V<N> — <evidence>
+- **Left for next time**: <if any>
 ```
 
-## Document Structure
-
-Every topic document includes YAML frontmatter:
-
-```yaml
 ---
-id: unique-topic-id
-title: "Human-readable title"
-status: draft | in-progress | complete
-complexity: low | medium | high
-related:
-  - "../other-layer/topic.md"
-prerequisites:
-  - "Concept name"
----
-```
 
-## Agent Hints
+## REFERENCE
 
-When processing ATLAS documents:
+### Navigation
 
-- **STATUS MATTERS**: Check `status:` field before citing
-- **FOLLOW RELATED**: Use `related:` links for cross-layer understanding
-- **LAYER FLOW**: 04-data → 03-perception → 02-annotation → 01-foundation → 05-integration
+| Need | Location |
+|------|----------|
+| Space implementations | `src/atlas/spaces/` |
+| Core abstractions | `src/atlas/core/` |
+| Experiment framework | `src/atlas/core/experiment.py` |
+| Space registry | `src/atlas/core/registry.py` |
+| Recent changes | `docs/changelog/CHANGELOG.md` |
 
-## Layer Responsibilities
+### Facts
 
-| Layer | Contents | When to Use |
-|-------|----------|-------------|
-| 01-foundation | VLM, World Model, VLA | Model selection, architecture decisions |
-| 02-annotation | Schema design, standards | Building annotation pipeline |
-| 03-perception | Stereo+IMU, Depth, SLAM, Hand Pose | Implementing perception stack |
-| 04-data-ecosystem | Ego, UMI, Sim2Real, Teleop, Hardware | Choosing data collection setup |
-| 05-integration | Pipeline patterns, quality gates | System-level design |
+- **Type**: Cognitive Architecture Framework
+- **Domain**: Embodied AI Navigation & Exploration
+- **Architecture**: Pluggable Cognitive Spaces
+- **Core Abstraction**: CognitiveSpace interface
+
+### Forbidden
+
+| Action | Why |
+|--------|-----|
+| Edit accepted ADRs | Immutable; supersede with new ADR |
+| Hardcode space-specific logic in solver | Breaks pluggability |
+| Skip CHANGELOG for new spaces | Documentation gap |
+| Use "Phase" naming | Deprecated terminology |
+| Skip validation tests for new space | No verification |
 
 ---
 
-*ATLAS Agent Protocol v0.1*
+*ATLAS Agent Protocol v0.3* — Pluggable Architecture
