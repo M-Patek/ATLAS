@@ -1,31 +1,15 @@
 # ATLAS: Atlas of Technologies for Learning Autonomous Systems
 
-**可插拔认知空间框架** | [English](#english)
+**可插拔认知空间框架**
 
-```
-架构设计: 认知空间作为核心抽象
-┌─────────────────────────────────────────────────────────────┐
-│  Task Layer (任务规划)                                        │
-│  - 目标分解 → 子任务序列 → 空间选择                            │
-│  - SSFR: 结构自发现与复用                                     │
-├─────────────────────────────────────────────────────────────┤
-│  Solver Layer (求解器)                                        │
-│  - A*, D* Lite, Dijkstra 等                                  │
-│  - 与具体空间类型解耦                                          │
-│  - 测地线 = 认知空间中的最优路径                                │
-├─────────────────────────────────────────────────────────────┤
-│  Space Layer (认知空间 - 可插拔)                              │
-│  - 抽象接口: compute_distance, get_heuristic, update          │
-│  - 离散实现: Euclidean, Ricci, Fisher, Conformal...          │
-│  - 连续实现: ContinuousRicci, ContinuousFisher...            │
-│  - 复合实现: Product, Hierarchical, Mixed                    │
-├─────────────────────────────────────────────────────────────┤
-│  Environment Layer (环境接口)                                  │
-│  - 物理厨房: pymunk 2D 物理模拟                               │
-│  - 网格世界: 离散状态空间                                     │
-│  - 连续世界: 物理坐标直接输入                                   │
-└─────────────────────────────────────────────────────────────┘
-```
+**架构设计：认知空间作为核心抽象**
+
+| 层级 | 组件 | 功能 |
+|------|------|------|
+| 任务层 | 任务规划、SSFR | 目标分解 → 子任务序列 → 空间选择；结构自发现与复用 |
+| 求解器层 | A*, D* Lite, Dijkstra | 与具体空间类型解耦；测地线 = 认知空间中的最优路径 |
+| 空间层 | 认知空间（可插拔） | 抽象接口：compute_distance, get_heuristic, update；支持离散/连续/复合实现 |
+| 环境层 | 物理厨房、网格世界、连续世界 | pymunk 2D 物理模拟；离散状态空间；物理坐标直接输入 |
 
 ---
 
@@ -94,7 +78,7 @@ prediction = space.predict_next_state(
 )
 ```
 
-### 2. 连续空间 SSFR
+### 3. 连续空间 SSFR
 
 ```python
 from atlas.spaces.continuous_ssfr import ContinuousSSFR
@@ -122,7 +106,7 @@ winner = ssfr.compete(observation, actual)
 new_structures = ssfr.evolve()
 ```
 
-### 3. 物理厨房集成
+### 4. 物理厨房集成
 
 ```python
 from experiments.tests.test_continuous_ssfr import (
@@ -147,7 +131,7 @@ for _ in range(100):
     result = planner.step(robot_id)
 ```
 
-### 4. 对比实验
+### 5. 对比实验
 
 ```python
 from atlas.core import Experiment
@@ -231,9 +215,9 @@ atlas/
 │   ├── fisher.py             # Fisher信息几何
 │   ├── wasserstein.py        # Wasserstein空间
 │   ├── finsler.py            # Finsler空间
-│   ├── continuous.py         # 连续空间基类（NEW）
-│   ├── continuous_ssfr.py    # 连续SSFR核心（NEW）
-│   ├── continuous_optimized.py # 优化版连续SSFR（NEW）
+│   ├── continuous.py         # 连续空间基类
+│   ├── continuous_ssfr.py    # 连续SSFR核心
+│   ├── continuous_optimized.py # 优化版连续SSFR
 │   ├── temporal.py           # 时序空间
 │   ├── composite.py          # 复合空间
 │   ├── grid3d.py             # 3D网格空间
@@ -250,27 +234,26 @@ atlas/
 │   ├── space_visualizer.py
 │   ├── path_animator.py
 │   └── comparison_plots.py
-└── research/                  # 理论研究
-    ├── ssfr_information_geometry.py
-    ├── ssfr_continuous.py
-    ├── ssfr_hierarchical.py
-    └── ab_testing.py
+└── research/                  # 研究工具
+    ├── ab_testing.py         # A/B测试框架
+    ├── multi_agent_ssfr.py   # 多智能体
+    ├── consensus.py          # 共识协议
+    └── neural_gradient.py    # 神经自然梯度
 
 experiments/
-├── tests/                     # 测试脚本（16个）
+├── tests/                     # 测试脚本
 │   ├── test_continuous_ssfr.py
 │   ├── test_ssfr_enhanced.py
 │   ├── test_structure_reuse_v2.py
 │   └── ...
-├── demos/                     # 演示脚本（6个）
+├── demos/                     # 演示脚本
 │   ├── demo_physical_kitchen.py
 │   └── ...
-├── benchmarks/                # 基准测试（3个）
+├── benchmarks/                # 基准测试
 │   ├── benchmark_continuous_ssfr.py
 │   └── ...
-└── research/                  # 研究分析（2个）
-    ├── meta_ssfr_atlas.py
-    └── meta_ssfr_enhanced.py
+└── research/                  # 研究实验
+    └── three_properties_fixed_benchmark.py  # 三大特性极限测试
 
 tests/                         # pytest 测试
 ├── test_core.py
