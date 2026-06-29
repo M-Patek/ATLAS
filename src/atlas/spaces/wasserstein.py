@@ -42,24 +42,26 @@ class WassersteinSpace(CognitiveSpace):
 
     def compute_distance(self, pos1: Tuple[int, int],
                         pos2: Tuple[int, int]) -> float:
-        """传输成本"""
+        """传输成本（向量化优化版）"""
         x1, y1 = pos1
         x2, y2 = pos2
 
         euclidean_dist = np.sqrt((x2-x1)**2 + (y2-y1)**2)
+        if euclidean_dist < 0.5:
+            return 0.0
+
         n_samples = max(int(euclidean_dist), 1)
 
-        total_cost = 0.0
-        for i in range(n_samples):
-            t = i / max(1, n_samples - 1)
-            x = int(x1 + t * (x2 - x1))
-            y = int(y1 + t * (y2 - y1))
+        # 向量化路径采样
+        t_values = np.linspace(0, 1, n_samples)
+        x_coords = np.clip((x1 + t_values * (x2 - x1)).astype(int), 0, self.width - 1)
+        y_coords = np.clip((y1 + t_values * (y2 - y1)).astype(int), 0, self.height - 1)
 
-            # 成本 × 距离
-            cost = self.cost_field[x, y] * self.base_cost
-            total_cost += cost * (euclidean_dist / n_samples)
+        # 批量获取成本
+        costs = self.cost_field[x_coords, y_coords] * self.base_cost
+        total_cost = np.sum(costs) * (euclidean_dist / n_samples)
 
-        return total_cost
+        return float(total_cost)
 
     def get_heuristic(self, pos: Tuple[int, int],
                      goal: Tuple[int, int]) -> float:

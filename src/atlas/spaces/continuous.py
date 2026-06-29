@@ -14,7 +14,7 @@ import numpy as np
 from abc import ABC, abstractmethod
 from typing import Dict, List, Tuple, Optional, Set, Any, Type, Callable
 from dataclasses import dataclass
-from collections import defaultdict
+from collections import defaultdict, OrderedDict
 import math
 
 
@@ -29,9 +29,12 @@ class ContinuousSpaceMetrics:
 
 class ContinuousField:
     """
-    连续场 - 用稀疏采样点 + 插值表示连续场
+    连续场 - 用稀疏采样点 + 插值表示连续场（优化版）
 
-    替代离散的 numpy 2D array，支持任意精度的连续查询。
+    优化点：
+    1. numpy向量化距离计算
+    2. LRU缓存使用OrderedDict实现O(1)淘汰
+    3. 批量查询优化
     """
 
     def __init__(self, default_value: float = 0.0,
@@ -46,8 +49,9 @@ class ContinuousField:
         self._grid_index: Dict[Tuple[int, int], List[Tuple[float, float]]] = defaultdict(list)
         self._index_resolution = 1.0  # 索引网格分辨率
 
-        # 缓存
-        self._cache: Dict[Tuple[float, float], float] = {}
+        # 使用OrderedDict实现O(1) LRU缓存
+        from collections import OrderedDict
+        self._cache: OrderedDict = OrderedDict()
         self._cache_size = 1000
 
     def _get_index_key(self, pos: Tuple[float, float]) -> Tuple[int, int]:
@@ -62,81 +66,183 @@ class ContinuousField:
         self._grid_index[idx].append(position)
         self._cache.clear()  # 清除缓存
 
+    def _find_candidates_vectorized(self, position: Tuple[float, float],
+                                     radius: float) -> List[Tuple[float, Tuple[float, float]]]:
+        """向量化候选点查找"""
+        idx = self._get_index_key(position)
+        px, py = position
+
+        # 收集所有候选点
+        candidates = []
+        for dx in range(-1, 2):
+            for dy in range(-1, 2):
+                cell = (idx[0] + dx, idx[1] + dy)
+                candidates.extend(self._grid_index.get(cell, []))
+
+        if not candidates:
+            return []
+
+        # 向量化距离计算
+        candidate_array = np.array(candidates)
+        dx = candidate_array[:, 0] - px
+        dy = candidate_array[:, 1] - py
+        distances = np.sqrt(dx**2 + dy**2)
+
+        # 过滤并返回
+        mask = distances <= radius
+        return [(float(d), tuple(pos)) for d, pos in zip(distances[mask], candidate_array[mask])]
+
     def query(self, position: Tuple[float, float],
               k: int = 4, radius: float = 2.0) -> float:
-        """
-        查询场值（使用k近邻插值）
-
-        Args:
-            position: 查询位置 (x, y)
-            k: 近邻数量
-            radius: 最大搜索半径
-
-        Returns:
-            插值后的场值
-        """
+        """查询场值（优化版）"""
         # 检查缓存
         if position in self._cache:
+            # 移动到最新使用
+            self._cache.move_to_end(position)
             return self._cache[position]
 
         if not self.samples:
             return self.default_value
 
-        # 快速索引查找候选点
-        idx = self._get_index_key(position)
-        candidates = []
-
-        # 搜索周围索引格子
-        for dx in range(-1, 2):
-            for dy in range(-1, 2):
-                cell = (idx[0] + dx, idx[1] + dy)
-                for sample_pos in self._grid_index.get(cell, []):
-                    dist = math.sqrt(
-                        (sample_pos[0] - position[0])**2 +
-                        (sample_pos[1] - position[1])**2
-                    )
-                    if dist <= radius:
-                        candidates.append((dist, sample_pos))
+        # 向量化查找候选点
+        candidates = self._find_candidates_vectorized(position, radius)
 
         if not candidates:
             return self.default_value
 
-        # 按距离排序，取前k个
+        # 使用numpy排序（更快）
         candidates.sort(key=lambda x: x[0])
         neighbors = candidates[:k]
 
-        # 反距离加权插值
+        # 反距离加权插值（使用numpy）
         if len(neighbors) == 1:
             result = self.samples[neighbors[0][1]]
         else:
-            weights = []
-            values = []
-            for dist, sample_pos in neighbors:
-                if dist < 1e-6:
-                    # 精确命中
-                    result = self.samples[sample_pos]
-                    self._cache[position] = result
-                    if len(self._cache) > self._cache_size:
-                        self._cache.pop(next(iter(self._cache)))
-                    return result
-                w = 1.0 / (dist ** 2)
-                weights.append(w)
-                values.append(self.samples[sample_pos])
+            distances = np.array([d for d, _ in neighbors])
 
-            total_weight = sum(weights)
-            result = sum(v * w for v, w in zip(values, weights)) / total_weight
+            # 检查精确命中
+            exact_mask = distances < 1e-6
+            if np.any(exact_mask):
+                result = self.samples[neighbors[0][1]]
+                self._cache[position] = result
+                if len(self._cache) >= self._cache_size:
+                    self._cache.popitem(last=False)
+                return result
+
+            # 向量化权重计算
+            weights = 1.0 / (distances ** 2)
+            values = np.array([self.samples[pos] for _, pos in neighbors])
+            result = np.sum(values * weights) / np.sum(weights)
 
         # 缓存结果
         self._cache[position] = result
-        if len(self._cache) > self._cache_size:
-            self._cache.pop(next(iter(self._cache)))
+        if len(self._cache) >= self._cache_size:
+            self._cache.popitem(last=False)
 
-        return result
+        return float(result)
 
     def query_batch(self, positions: List[Tuple[float, float]],
                     k: int = 4) -> List[float]:
-        """批量查询"""
-        return [self.query(pos, k) for pos in positions]
+        """批量查询（向量化优化）"""
+        # 对于批量查询，使用更高效的策略
+        if len(positions) == 0:
+            return []
+
+        # 小批量直接循环
+        if len(positions) <= 10:
+            return [self.query(pos, k) for pos in positions]
+
+        # 大批量：预加载所有候选点，减少索引查找
+        return self._query_batch_optimized(positions, k)
+
+    def _query_batch_optimized(self, positions: List[Tuple[float, float]],
+                                k: int) -> List[float]:
+        """优化的批量查询"""
+        results = []
+
+        # 批量处理，每批100个
+        batch_size = 100
+        for i in range(0, len(positions), batch_size):
+            batch = positions[i:i + batch_size]
+
+            # 收集这批的所有候选单元格
+            cell_cache = {}
+            for pos in batch:
+                idx = self._get_index_key(pos)
+                for dx in range(-1, 2):
+                    for dy in range(-1, 2):
+                        cell = (idx[0] + dx, idx[1] + dy)
+                        if cell not in cell_cache:
+                            cell_cache[cell] = self._grid_index.get(cell, [])
+
+            # 处理每个查询
+            for pos in batch:
+                results.append(self._query_with_cache(pos, k, cell_cache))
+
+        return results
+
+    def _query_with_cache(self, position: Tuple[float, float],
+                          k: int,
+                          cell_cache: Dict) -> float:
+        """使用预加载单元格缓存的查询"""
+        # 检查缓存
+        if position in self._cache:
+            self._cache.move_to_end(position)
+            return self._cache[position]
+
+        if not self.samples:
+            return self.default_value
+
+        # 从缓存的单元格中收集候选点
+        idx = self._get_index_key(position)
+        px, py = position
+        candidates = []
+        radius = 2.0
+
+        for dx in range(-1, 2):
+            for dy in range(-1, 2):
+                cell = (idx[0] + dx, idx[1] + dy)
+                candidates.extend(cell_cache.get(cell, []))
+
+        if not candidates:
+            return self.default_value
+
+        # 向量化距离计算
+        candidate_array = np.array(candidates)
+        distances = np.sqrt((candidate_array[:, 0] - px)**2 +
+                          (candidate_array[:, 1] - py)**2)
+
+        # 过滤和排序
+        mask = distances <= radius
+        valid_distances = distances[mask]
+        valid_positions = candidate_array[mask]
+
+        if len(valid_distances) == 0:
+            return self.default_value
+
+        # 取前k个
+        k_indices = np.argsort(valid_distances)[:k]
+
+        if len(k_indices) == 1:
+            result = self.samples[tuple(valid_positions[k_indices[0]])]
+        else:
+            k_distances = valid_distances[k_indices]
+            k_positions = valid_positions[k_indices]
+
+            # 检查精确命中
+            if k_distances[0] < 1e-6:
+                result = self.samples[tuple(k_positions[0])]
+            else:
+                weights = 1.0 / (k_distances ** 2)
+                values = np.array([self.samples[tuple(pos)] for pos in k_positions])
+                result = np.sum(values * weights) / np.sum(weights)
+
+        # 缓存
+        self._cache[position] = result
+        if len(self._cache) >= self._cache_size:
+            self._cache.popitem(last=False)
+
+        return float(result)
 
     def get_samples_in_region(self, center: Tuple[float, float],
                               radius: float) -> List[Tuple[Tuple[float, float], float]]:

@@ -45,23 +45,29 @@ class FisherSpace(CognitiveSpace):
 
     def compute_distance(self, pos1: Tuple[int, int],
                         pos2: Tuple[int, int]) -> float:
-        """Fisher 距离"""
+        """Fisher 距离（向量化优化版）"""
         x1, y1 = pos1
         x2, y2 = pos2
 
         euclidean_dist = np.sqrt((x2-x1)**2 + (y2-y1)**2)
+        if euclidean_dist < 0.5:
+            return 0.0
+
         n_samples = max(int(euclidean_dist), 1)
 
-        total = 0.0
-        for i in range(n_samples):
-            t = i / max(1, n_samples - 1)
-            x = int(x1 + t * (x2 - x1))
-            y = int(y1 + t * (y2 - y1))
+        # 向量化路径采样
+        t_values = np.linspace(0, 1, n_samples)
+        x_coords = np.clip((x1 + t_values * (x2 - x1)).astype(int), 0, self.width - 1)
+        y_coords = np.clip((y1 + t_values * (y2 - y1)).astype(int), 0, self.height - 1)
 
-            fisher_factor = self._fisher_metric(x, y)
-            total += fisher_factor * (euclidean_dist / n_samples)
+        # 批量计算Fisher度量
+        confidences = np.maximum(0.01, self.confidence[x_coords, y_coords])
+        fisher_factors = 1.0 / confidences
 
-        return total
+        # 向量化求和
+        total = np.sum(fisher_factors) * (euclidean_dist / n_samples)
+
+        return float(total)
 
     def get_heuristic(self, pos: Tuple[int, int],
                      goal: Tuple[int, int]) -> float:

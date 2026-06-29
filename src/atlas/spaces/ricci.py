@@ -79,7 +79,7 @@ class RicciSpace(CognitiveSpace):
 
     def compute_distance(self, pos1: Tuple[int, int],
                         pos2: Tuple[int, int]) -> float:
-        """计算 Ricci 距离"""
+        """计算 Ricci 距离（向量化优化版）"""
         x1, y1 = pos1
         x2, y2 = pos2
 
@@ -87,19 +87,22 @@ class RicciSpace(CognitiveSpace):
         if euclidean_dist < 0.5:
             return 0.0
 
-        # 沿路径采样积分
+        # 向量化路径采样积分
         n_samples = max(int(euclidean_dist * 2), 5)
-        total = 0.0
 
-        for i in range(n_samples):
-            t = i / max(1, n_samples - 1)
-            x = int(x1 + t * (x2 - x1))
-            y = int(y1 + t * (y2 - y1))
+        # 生成采样参数和坐标（向量化）
+        t_values = np.linspace(0, 1, n_samples)
+        x_coords = np.clip((x1 + t_values * (x2 - x1)).astype(int), 0, self.width - 1)
+        y_coords = np.clip((y1 + t_values * (y2 - y1)).astype(int), 0, self.height - 1)
 
-            metric_factor = 1.0 + self.curvature_scale * abs(self.curvature[x, y])
-            total += metric_factor * (euclidean_dist / n_samples)
+        # 批量获取曲率值（向量化索引）
+        curvatures = self.curvature[x_coords, y_coords]
+        metric_factors = 1.0 + self.curvature_scale * np.abs(curvatures)
 
-        return total
+        # 向量化求和
+        total = np.sum(metric_factors) * (euclidean_dist / n_samples)
+
+        return float(total)
 
     def get_heuristic(self, pos: Tuple[int, int],
                      goal: Tuple[int, int]) -> float:
