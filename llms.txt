@@ -1,90 +1,138 @@
-# ATLAS: Embodied AI Data Infrastructure Learning Map
+# ATLAS: Pluggable Cognitive Architecture — LLM Navigation
 
-## For Agents: Start Here
+> **Quick Start**: Read [AGENTS.md](AGENTS.md) → [docs/INDEX.md](docs/INDEX.md)
 
-[AGENTS.md](AGENTS.md) — Machine operation protocol (READ FIRST)
-[docs/INDEX.md](docs/INDEX.md) — Human-readable documentation index
+---
 
-## Navigation by Intent
+## For AI Agents (Auto-loaded)
 
-### Quick Links by Task
+1. [AGENTS.md](AGENTS.md) — Boot protocol & change classification (T1-T5)
+2. [docs/subsystems/](docs/subsystems/) — Implementation docs (01-07)
+3. [docs/adr/](docs/adr/) — Architecture decisions
 
-**→ Researching which MODEL to use?**
-- Start: [01-foundation/index.md](docs/01-foundation/index.md)
-- Topics: VLM底座, World Model, VLA端到端
+---
 
-**→ Designing ANNOTATION schemas?**
-- Start: [02-annotation/index.md](docs/02-annotation/index.md)
-- Topics: Schema设计, 动作/场景/物理标注
+## Subsystem Index (1-7)
 
-**→ Implementing PERCEPTION algorithms?**
-- Start: [03-perception/index.md](docs/03-perception/index.md)
-- Topics: 双目+IMU, 深度估计(FoundationStereo), SLAM, 手势估计, 3D重建
+| # | Subsystem | Code Path | Purpose | Status |
+|---|-----------|-----------|---------|--------|
+| 01 | [Core](docs/subsystems/01-core.md) | `src/core/` | Space abstraction, registry, solvers | stable |
+| 02 | [SSFR](docs/subsystems/02-ssfr.md) | `src/core/ssfr*.py` | Structure self-discovery & reuse | stable |
+| 03 | [Discrete Spaces](docs/subsystems/03-discrete-spaces.md) | `src/spaces/*.py` | Grid-based cognitive spaces | stable |
+| 04 | [Continuous Spaces](docs/subsystems/04-continuous-spaces.md) | `src/spaces/continuous*.py` | **Key feature**: Continuous coords | stable |
+| 05 | [Environment](docs/subsystems/05-environment.md) | `src/kitchen/`, `visualization/` | Physics + viz | stable |
+| 06 | [Learning](docs/subsystems/06-learning.md) | `src/learning/` | Meta-learning, neural spaces | experimental |
+| 07 | [Research](docs/subsystems/07-research.md) | `src/research/` | Multi-agent, A/B testing | experimental |
 
-**→ Choosing DATA collection setup?**
-- Start: [04-data-ecosystem/index.md](docs/04-data-ecosystem/index.md)
-- Topics: Ego-centric, UMI, Sim2Real, 遥操作, 硬件矩阵
+---
 
-**→ Understanding full SYSTEM integration?**
-- Start: [05-integration/index.md](docs/05-integration/index.md)
-- Topics: Pipeline模式, 质量门控, 系统设计
+## Navigation by Task
 
-## Data Flow Architecture
+### → Implementing new cognitive space?
+1. Read [01-core](docs/subsystems/01-core.md) — Abstract interface
+2. Read [03-discrete](docs/subsystems/03-discrete-spaces.md) or [04-continuous](docs/subsystems/04-continuous-spaces.md) — Examples
+3. Copy `NN.md` template → rename to your subsystem
+4. Run tests: `pytest tests/test_spaces.py -v`
 
-Input data flows bottom-up, model decisions flow top-down:
+### → Understanding SSFR mechanism?
+- [02-ssfr](docs/subsystems/02-ssfr.md) — Core concepts
+- `src/core/ssfr_enhanced.py` — Implementation
+- Key: Perceive → Compete → Evolve loop
+
+### → Running experiments?
+- [02-ssfr](docs/subsystems/02-ssfr.md) — Experiment framework
+- `experiments/benchmarks/` — Performance tests
+- `experiments/demos/` — Usage examples
+
+### → Using continuous spaces (ATLAS unique)?
+- [04-continuous-spaces](docs/subsystems/04-continuous-spaces.md)
+- `src/spaces/continuous.py` — Base classes
+- `src/spaces/continuous_ssfr.py` — Continuous SSFR
+- **Key insight**: Sparse sampling + kNN interpolation
+
+---
+
+## Architecture Summary
 
 ```
 ┌─────────────────────────────────────────┐
-│  05-integration     System Design       │ ← Deployment decisions
+│  07-research      Multi-agent/Analysis  │ ← Advanced tools
 ├─────────────────────────────────────────┤
-│  01-foundation      VLM/World Model/VLA │ ← Model selection
+│  06-learning      Meta-learning         │ ← Learning to learn
 ├─────────────────────────────────────────┤
-│  02-annotation      Schema/Standards    │ ← Annotation pipeline
+│  05-environment   Kitchen + Viz         │ ← Embodied testbed
 ├─────────────────────────────────────────┤
-│  03-perception      Stereo/Depth/SLAM   │ ← Perception stack
+│  04-continuous    Continuous spaces     │ ← Float coordinates
 ├─────────────────────────────────────────┤
-│  04-data-ecosystem  Ego/UMI/Sim2Real    │ ← Data collection
+│  03-discrete      Discrete spaces       │ ← Grid world
+├─────────────────────────────────────────┤
+│  02-ssfr          SSFR mechanism        │ ← Structure discovery
+├─────────────────────────────────────────┤
+│  01-core          CognitiveSpace        │ ← Core abstraction
 └─────────────────────────────────────────┘
 ```
 
+---
+
 ## Quick Facts
 
-- **Layers**: 5 (Foundation, Annotation, Perception, Data, Integration)
-- **Topics**: ~20-25 focused documents
-- **Read time**: Per topic 10-15 minutes; Full tour 4-6 hours
-- **Status tracking**: docs/_machine/status.yaml
+- **Type**: Research framework (cognitive architecture)
+- **Domain**: Embodied AI navigation
+- **Core abstraction**: `CognitiveSpace` (pluggable)
+- **Key contribution**: Continuous cognitive spaces
+- **Spaces registered**: 16 (Ricci, Fisher, Conformal, Euclidean, etc.)
+- **Subsystems**: 7 documented (01-07)
+- **Structure**: Flat `src/` (not nested `src/atlas/`)
 
-## Top Priority Topics
+---
 
-Per project requirements:
+## Entry Points by Code
 
-1. **FoundationStereo** → docs/03-perception/02-depth-estimation.md
-2. **双目+IMU协同** → docs/03-perception/01-stereo-imu.md
-3. **VLA模型** → docs/01-foundation/03-vla.md
-4. **硬件矩阵** → docs/04-data-ecosystem/05-hardware-matrix.md
+| File | Class/Function | Purpose |
+|------|----------------|---------|
+| `src/core/space.py` | `CognitiveSpace` | Abstract base |
+| `src/core/registry.py` | `create_space()` | Factory |
+| `src/core/solver.py` | `GeodesicSolver` | A* planner |
+| `src/core/ssfr_enhanced.py` | `SSFREnhanced` | SSFR engine |
+| `src/core/experiment.py` | `Experiment` | Benchmarking |
 
-## Cross-Reference Guide
+---
 
-| From | To | Typical Flow |
-|------|-----|--------------|
-| 04-data-ecosystem | 03-perception | Raw data → Perception output |
-| 03-perception | 02-annotation | Features → Structured labels |
-| 02-annotation | 01-foundation | Labels → Training data |
-| 01-foundation | 05-integration | Models → Production system |
+## Testing
 
-## Content Status
+```bash
+# Core tests
+pytest tests/test_core.py -v
 
-See [docs/_machine/status.yaml](docs/_machine/status.yaml) for:
-- Completion status per topic
-- Next planned content
-- Known gaps
+# Space tests
+pytest tests/test_spaces.py -v
 
-## Reference Library
+# Quick sanity check
+python -c "from src.core.registry import list_available_spaces; print(list(list_available_spaces().keys()))"
+```
 
-- [references/papers/](references/) — Organized by topic
-- [references/datasets.md](references/datasets.md) — Dataset comparison
-- [references/tools.md](references/tools.md) — Code repositories
+---
+
+## Development Protocol
+
+Per [AGENTS.md](AGENTS.md):
+
+| Change | Type | Checklist |
+|--------|------|-----------|
+| Docs/typo | T1 | Nothing |
+| Refactor | T2 | CHANGELOG + tests |
+| Bug fix | T3 | CHANGELOG + doc + tests |
+| New space | T4 | Subsystem doc + tests |
+| Framework change | T5 | All tests + ADR |
+
+---
+
+## Architecture Decisions
+
+- [0001-flat-structure](docs/adr/0001-flat-structure.md) — Why flat `src/`
+- [0002-research-architecture](docs/adr/0002-research-architecture.md) — Research vs production
 
 ---
 
 *ATLAS: Atlas of Technologies for Learning Autonomous Systems*
+*Updated: 2026-06-29*
