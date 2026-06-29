@@ -13,7 +13,7 @@ from pathlib import Path
 from typing import List, Tuple
 
 REQUIRED_FIELDS = {'id', 'title', 'status', 'last_validated'}
-VALID_STATUSES = {'draft', 'review', 'stable', 'deprecated', 'complete', 'in-progress', 'not-started', 'proposed', 'template'}
+VALID_STATUSES = {'draft', 'review', 'stable', 'deprecated', 'accepted', 'experimental', 'active-dev', 'complete', 'in-progress', 'not-started', 'proposed', 'template'}
 
 def extract_frontmatter(content: str) -> Tuple[dict, str]:
     """Extract YAML frontmatter from markdown content."""

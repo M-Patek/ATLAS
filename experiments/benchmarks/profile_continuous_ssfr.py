@@ -13,12 +13,12 @@ import numpy as np
 import math
 from typing import Dict, List, Tuple
 
-from atlas.spaces.continuous import (
+from src.spaces.continuous import (
     ContinuousField, ContinuousRicciSpace,
     ContinuousFisherSpace, ContinuousWassersteinSpace,
 )
-from atlas.spaces.continuous_ssfr import ContinuousSSFR
-from atlas.kitchen import create_demo_kitchen
+from src.spaces.continuous_ssfr import ContinuousSSFR
+from src.kitchen import create_demo_kitchen
 
 
 def profile_continuous_field():
@@ -81,8 +81,7 @@ def profile_continuous_space():
 
     space = ContinuousRicciSpace()
 
-    # 预填充一些数据
-    for _ in range(100):
+    # 预填充一些数�?    for _ in range(100):
         x = np.random.random() * 10
         y = np.random.random() * 10
         space.update_from_observation((x, y), {
@@ -211,8 +210,7 @@ def profile_kitchen_integration():
 
     planner.assign_task(robot_id, 'make_coffee')
 
-    # 运行并计时
-    n = 100
+    # 运行并计�?    n = 100
     start = time.time()
     for _ in range(n):
         kitchen.step()
@@ -222,8 +220,7 @@ def profile_kitchen_integration():
     print(f"Kitchen + SSFR {n} steps: {total_time*1000:.2f}ms")
     print(f"Per step: {total_time/n*1000:.3f}ms")
 
-    # 分析各组件时间
-    stats = physical_ssfr.get_statistics()
+    # 分析各组件时�?    stats = physical_ssfr.get_statistics()
     print(f"\nSSFR perceive time: {stats.get('avg_perceive_time_ms', 0):.3f}ms")
     print(f"SSFR compete time: {stats.get('avg_compete_time_ms', 0):.3f}ms")
     print(f"Pool size: {stats['pool_stats']['num_structures']}")
@@ -246,8 +243,7 @@ def run_all_profiles():
     results['ssfr'] = profile_continuous_ssfr()
     results['kitchen'] = profile_kitchen_integration()
 
-    # 汇总
-    print("\n" + "=" * 70)
+    # 汇�?    print("\n" + "=" * 70)
     print("SUMMARY")
     print("=" * 70)
 

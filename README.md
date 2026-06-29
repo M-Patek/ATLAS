@@ -35,8 +35,8 @@
 ### 1. 基础使用（离散网格）
 
 ```python
-from atlas.core import Experiment, GeodesicSolver
-from atlas.core.registry import create_space
+from src.core import Experiment, GeodesicSolver
+from src.core.registry import create_space
 
 # 创建空间（以 Euclidean 为例）
 space = create_space("euclidean", width=40, height=20)
@@ -54,7 +54,7 @@ if result.success:
 ### 2. 基础使用（连续坐标）
 
 ```python
-from atlas.spaces.continuous import ContinuousRicciSpace
+from src.spaces.continuous import ContinuousRicciSpace
 
 # 创建连续空间（无网格限制）
 space = ContinuousRicciSpace(curvature_scale=2.0)
@@ -81,7 +81,7 @@ prediction = space.predict_next_state(
 ### 3. 连续空间 SSFR
 
 ```python
-from atlas.spaces.continuous_ssfr import ContinuousSSFR
+from src.spaces.continuous_ssfr import ContinuousSSFR
 
 # 创建连续空间 SSFR（无需离散网格）
 ssfr = ContinuousSSFR(
@@ -199,61 +199,64 @@ print(experiment.get_summary())
 
 ## 项目结构
 
+### 子系统（文档）
+
+| 编号 | 子系统 | 代码 | 说明 |
+|------|--------|------|------|
+| [01](docs/subsystems/01-core.md) | Core | `src/core/` | 空间抽象、注册表、求解器 |
+| [02](docs/subsystems/02-ssfr.md) | SSFR | `src/core/ssfr*.py` | 结构自发现与复用 |
+| [03](docs/subsystems/03-discrete-spaces.md) | Discrete Spaces | `src/spaces/` | 离散网格空间 |
+| [04](docs/subsystems/04-continuous-spaces.md) | Continuous Spaces | `src/spaces/continuous*.py` | 连续坐标空间 |
+| [05](docs/subsystems/05-environment.md) | Environment | `src/kitchen/`, `src/visualization/` | 物理环境+可视化 |
+| [06](docs/subsystems/06-learning.md) | Learning | `src/learning/` | 学习模块 |
+| [07](docs/subsystems/07-research.md) | Research | `src/research/` | 研究工具 |
+
+完整导航见 [docs/INDEX.md](docs/INDEX.md)
+
+### 代码结构
+
 ```
-atlas/
-├── core/                      # 核心框架
+src/
+├── core/                      # [01] 核心框架
 │   ├── space.py              # CognitiveSpace 抽象
 │   ├── solver.py             # GeodesicSolver
 │   ├── experiment.py         # Experiment 框架
 │   ├── registry.py           # 空间注册表
 │   ├── replanning.py         # D* Lite 增量规划
-│   └── ssfr_enhanced.py     # 增强版 SSFR
-├── spaces/                    # 基础空间实现
-│   ├── euclidean.py          # 欧氏空间（离散网格）
-│   ├── ricci.py              # Ricci流空间
+│   └── ssfr_enhanced.py     # [02] 增强版 SSFR
+├── spaces/                    # [03][04] 空间实现
+│   ├── euclidean.py          # 欧氏空间
+│   ├── ricci.py              # Ricci空间
 │   ├── conformal.py          # 共形空间
-│   ├── fisher.py             # Fisher信息几何
+│   ├── fisher.py             # Fisher空间
 │   ├── wasserstein.py        # Wasserstein空间
 │   ├── finsler.py            # Finsler空间
-│   ├── continuous.py         # 连续空间基类
-│   ├── continuous_ssfr.py    # 连续SSFR核心
-│   ├── continuous_optimized.py # 优化版连续SSFR
+│   ├── continuous.py         # [04] 连续空间基类
+│   ├── continuous_ssfr.py    # [04] 连续SSFR
 │   ├── temporal.py           # 时序空间
 │   ├── composite.py          # 复合空间
 │   ├── grid3d.py             # 3D网格空间
 │   └── solver3d.py           # 3D求解器
-├── kitchen/                   # 物理厨房环境
-│   ├── __init__.py
-│   └── controller.py         # 厨房控制器
-├── learning/                  # 学习模块
+├── kitchen/                   # [05] 物理厨房
+│   └── controller.py
+├── learning/                  # [06] 学习模块
 │   ├── bayesian_optimizer.py
 │   ├── meta_learner.py
-│   ├── neural_space.py
-│   └── trainer.py
-├── visualization/             # 可视化
+│   └── neural_space.py
+├── visualization/             # [05] 可视化
 │   ├── space_visualizer.py
 │   ├── path_animator.py
 │   └── comparison_plots.py
-└── research/                  # 研究工具
-    ├── ab_testing.py         # A/B测试框架
-    ├── multi_agent_ssfr.py   # 多智能体
-    ├── consensus.py          # 共识协议
-    └── neural_gradient.py    # 神经自然梯度
+└── research/                  # [07] 研究工具
+    ├── ab_testing.py
+    ├── multi_agent_ssfr.py
+    ├── consensus.py
+    └── neural_gradient.py
 
 experiments/
 ├── tests/                     # 测试脚本
-│   ├── test_continuous_ssfr.py
-│   ├── test_ssfr_enhanced.py
-│   ├── test_structure_reuse_v2.py
-│   └── ...
 ├── demos/                     # 演示脚本
-│   ├── demo_physical_kitchen.py
-│   └── ...
-├── benchmarks/                # 基准测试
-│   ├── benchmark_continuous_ssfr.py
-│   └── ...
-└── research/                  # 研究实验
-    └── three_properties_fixed_benchmark.py  # 三大特性极限测试
+└── benchmarks/                # 基准测试
 
 tests/                         # pytest 测试
 ├── test_core.py
@@ -315,7 +318,7 @@ consistent = multi.find_consistent_structure(representations, observation)
 ## 开发新的认知空间
 
 ```python
-from atlas.core.space import CognitiveSpace, register_space
+from src.core.space import CognitiveSpace, register_space
 
 @register_space("my_space")
 class MySpace(CognitiveSpace):

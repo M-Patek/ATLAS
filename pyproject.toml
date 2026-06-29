@@ -58,7 +58,7 @@ Documentation = "https://github.com/yourusername/atlas/tree/main/docs"
 Repository = "https://github.com/yourusername/atlas"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/atlas"]
+packages = ["src"]
 
 [tool.black]
 line-length = 100

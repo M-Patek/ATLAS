@@ -1,17 +1,16 @@
 """
 演示: TemporalSpace 时序空间
 
-展示时间维度、场演化预测、周期性检测
-"""
+展示时间维度、场演化预测、周期性检�?"""
 
 import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
 
 import numpy as np
-from atlas.core import GeodesicSolver
-from atlas.core.registry import create_space
-from atlas.spaces.temporal import TemporalSpace, CircularBuffer, FieldPredictor, PeriodicityDetector
+from src.core import GeodesicSolver
+from src.core.registry import create_space
+from src.spaces.temporal import TemporalSpace, CircularBuffer, FieldPredictor, PeriodicityDetector
 
 print("=" * 70)
 print("ATLAS: TemporalSpace Demo")
@@ -31,7 +30,7 @@ buffer = CircularBuffer(maxlen=5)
 
 # 添加数据
 for i in range(10):
-    from atlas.spaces.temporal import TemporalSnapshot
+    from src.spaces.temporal import TemporalSnapshot
     snapshot = TemporalSnapshot(
         timestamp=float(i),
         fields={'field1': np.random.rand(10, 10)},
@@ -110,8 +109,7 @@ detected_period = detector.detect_period_autocorr(periodic_signal)
 print(f"Generated signal with period {period}")
 print(f"Detected period: {detected_period}")
 
-# 非周期信号
-random_signal = np.random.randn(50).tolist()
+# 非周期信�?random_signal = np.random.randn(50).tolist()
 detected_random = detector.detect_period_autocorr(random_signal)
 print(f"Random signal detected period: {detected_random}")
 print()
@@ -141,15 +139,13 @@ print(f"Created TemporalSpace {width}x{height} with Ricci base")
 print(f"History buffer size: {space.history_length}")
 print()
 
-# 模拟动态环境
-start_pos = (5, 10)
+# 模拟动态环�?start_pos = (5, 10)
 goal_pos = (25, 10)
 
 print("Simulating environment over 30 time steps...")
 print()
 
-# 模拟移动障碍物
-obstacle_positions = []
+# 模拟移动障碍�?obstacle_positions = []
 for t in range(30):
     # 障碍物做正弦移动
     obs_x = 15 + int(5 * np.sin(2 * np.pi * t / 10))
@@ -160,8 +156,7 @@ for t in range(30):
 for t in range(30):
     obs_pos = obstacle_positions[t]
 
-    # 构造观测
-    observation = {
+    # 构造观�?    observation = {
         'timestamp': float(t),
         'obstacles': [obs_pos],
         'goal_position': goal_pos,
@@ -183,8 +178,7 @@ print(f"  Current time: {temporal_stats['current_time']}")
 print(f"  Average field change rate: {temporal_stats.get('average_field_change_rate', 'N/A')}")
 print()
 
-# 预测障碍物轨迹
-future_times = [30, 32, 34, 36, 38]
+# 预测障碍物轨�?future_times = [30, 32, 34, 36, 38]
 predicted_trajectory = space.predict_obstacle_trajectory('obs1', future_times)
 print("Predicted obstacle trajectory:")
 actual_future = [obstacle_positions[min(t, 29)] for t in future_times]
@@ -202,8 +196,7 @@ print("5. Field Evolution Prediction")
 print("=" * 70)
 print()
 
-# 预测未来场状态
-future_time = 35
+# 预测未来场状�?future_time = 35
 predicted_uncertainty = space.predict_field('uncertainty', future_time)
 
 if predicted_uncertainty is not None:
@@ -231,13 +224,11 @@ print("6. Path Planning in Temporal Space")
 print("=" * 70)
 print()
 
-# 在当前状态规划
-solver = GeodesicSolver(space)
+# 在当前状态规�?solver = GeodesicSolver(space)
 
 # 添加静态障碍物
 static_obstacles = set()
-for t_obs in obstacle_positions[-5:]:  # 最近的障碍物位置
-    static_obstacles.add(t_obs)
+for t_obs in obstacle_positions[-5:]:  # 最近的障碍物位�?    static_obstacles.add(t_obs)
 
 result = solver.solve(start_pos, goal_pos, static_obstacles)
 
@@ -260,7 +251,7 @@ print("7. PredictiveRicciSpace")
 print("=" * 70)
 print()
 
-from atlas.spaces.temporal import PredictiveRicciSpace
+from src.spaces.temporal import PredictiveRicciSpace
 
 pred_space = PredictiveRicciSpace(
     width=width, height=height,
@@ -268,8 +259,7 @@ pred_space = PredictiveRicciSpace(
     history_length=30
 )
 
-# 同样的更新
-for t in range(20):
+# 同样的更�?for t in range(20):
     obs_pos = obstacle_positions[t]
     observation = {
         'timestamp': float(t),
@@ -297,8 +287,7 @@ print("8. Comparison: Temporal vs Static Space")
 print("=" * 70)
 print()
 
-# 静态空间
-static_space = create_space("ricci", width, height, curvature_scale=1.5)
+# 静态空�?static_space = create_space("ricci", width, height, curvature_scale=1.5)
 static_space.update_from_observation(start_pos, {
     'obstacles': [obstacle_positions[-1]],
     'goal_position': goal_pos

@@ -8,9 +8,9 @@ import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
 
 import numpy as np
-from atlas.core import GeodesicSolver
-from atlas.core.registry import create_space
-from atlas.spaces.composite import (
+from src.core import GeodesicSolver
+from src.core.registry import create_space
+from src.spaces.composite import (
     ProductSpace, HierarchicalSpace, MixedSpace,
     create_exploration_navigation_balance,
     create_adaptive_exploration_space
@@ -25,8 +25,7 @@ def test_product_space():
 
     width, height = 30, 20
 
-    # 创建子空间
-    ricci = create_space("ricci", width, height, curvature_scale=1.5)
+    # 创建子空�?    ricci = create_space("ricci", width, height, curvature_scale=1.5)
     conformal = create_space("conformal", width, height)
 
     # 创建乘积空间
@@ -76,8 +75,7 @@ def test_product_space():
     print(f"  Conformal alone: {len(result_c.path) if result_c.path else 0} steps, cost={result_c.cost:.2f}")
     print(f"  Product:         {len(result.path) if result.path else 0} steps, cost={result.cost:.2f}")
 
-    # 测试动态权重调整
-    print(f"\nAdjusting weights to Ricci=0.3, Conformal=0.7...")
+    # 测试动态权重调�?    print(f"\nAdjusting weights to Ricci=0.3, Conformal=0.7...")
     product.adjust_weights({"ricci": 0.3, "conformal": 0.7})
 
     result2 = solver.solve(start, goal, obstacles)
@@ -93,9 +91,7 @@ def test_hierarchical_space():
     print("=" * 70)
 
     # 创建大小空间
-    global_space = create_space("ricci", 10, 10, curvature_scale=1.0)  # 粗粒度
-    local_space = create_space("conformal", 50, 50)  # 细粒度
-
+    global_space = create_space("ricci", 10, 10, curvature_scale=1.0)  # 粗粒�?    local_space = create_space("conformal", 50, 50)  # 细粒�?
     hierarchical = HierarchicalSpace(
         width=50, height=50,
         global_space=global_space,
@@ -110,8 +106,7 @@ def test_hierarchical_space():
     hierarchical.update_from_observation(start, {'goal_position': goal})
 
     # 测试距离计算
-    short_dist = hierarchical.compute_distance((10, 25), (12, 25))  # 短距离，用局部
-    long_dist = hierarchical.compute_distance(start, goal)  # 长距离，用全局
+    short_dist = hierarchical.compute_distance((10, 25), (12, 25))  # 短距离，用局�?    long_dist = hierarchical.compute_distance(start, goal)  # 长距离，用全局
 
     print(f"Short distance (local):  {short_dist:.2f}")
     print(f"Long distance (global):  {long_dist:.2f}")
@@ -139,8 +134,7 @@ def test_mixed_space():
 
     width, height = 30, 20
 
-    # 创建子空间
-    ricci = create_space("ricci", width, height, curvature_scale=2.0)
+    # 创建子空�?    ricci = create_space("ricci", width, height, curvature_scale=2.0)
     euclidean = create_space("euclidean", width, height)
 
     # 混合空间：高uncertainty时用Ricci，否则用Euclidean
@@ -152,8 +146,7 @@ def test_mixed_space():
     start = (5, 10)
     goal = (25, 10)
 
-    # 测试1: 低uncertainty（应该选Euclidean）
-    mixed.update_from_observation(start, {
+    # 测试1: 低uncertainty（应该选Euclidean�?    mixed.update_from_observation(start, {
         'uncertainty': 0.3,
         'goal_position': goal
     })
@@ -164,8 +157,7 @@ def test_mixed_space():
     dist1 = mixed.compute_distance(start, goal)
     print(f"Distance: {dist1:.2f}")
 
-    # 测试2: 高uncertainty（应该选Ricci）
-    mixed.update_from_observation(start, {
+    # 测试2: 高uncertainty（应该选Ricci�?    mixed.update_from_observation(start, {
         'uncertainty': 0.8,
         'goal_position': goal
     })

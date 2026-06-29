@@ -8,14 +8,14 @@ import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
 
 import numpy as np
-from atlas.learning import (
+from src.learning import (
     BayesianOptimizer, SpaceOptimizer,
     MetaLearner, TaskEmbedding, SpaceSelectionPolicy,
     NeuralSpace, SpatialEncoder, MetricNetwork,
     SpaceTrainer, MetaTrainingEnvironment
 )
-from atlas.core import GeodesicSolver
-from atlas.core.registry import create_space
+from src.core import GeodesicSolver
+from src.core.registry import create_space
 
 
 def test_bayesian_optimizer():
@@ -42,12 +42,11 @@ def test_bayesian_optimizer():
 
 
 def test_space_optimizer():
-    """测试空间参数优化器"""
+    """测试空间参数优化�?""
     print("Test 2: SpaceOptimizer")
 
     def evaluate_space(space):
-        # 简单评估：在随机环境中规划成功率
-        start = (5, 10)
+        # 简单评估：在随机环境中规划成功�?        start = (5, 10)
         goal = (35, 10)
         obstacles = {(20, y) for y in range(5, 16)}
 
@@ -143,8 +142,7 @@ def test_neural_space():
 
     space.update_from_observation((5, 7), obs)
 
-    # 测试距离计算（应该有启发式回退）
-    d = space.compute_distance((5, 7), (10, 7))
+    # 测试距离计算（应该有启发式回退�?    d = space.compute_distance((5, 7), (10, 7))
     print(f"  Distance: {d:.2f}")
 
     # 测试训练
@@ -156,7 +154,7 @@ def test_neural_space():
 
 
 def test_training_environment():
-    """测试元训练环境"""
+    """测试元训练环�?""
     print("Test 6: MetaTrainingEnvironment")
 
     env = MetaTrainingEnvironment(

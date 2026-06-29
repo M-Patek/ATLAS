@@ -10,7 +10,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
 import pytest
 import numpy as np
 
-from atlas.core.registry import create_space
+from src.core.registry import create_space
 
 
 class TestEuclideanSpace:

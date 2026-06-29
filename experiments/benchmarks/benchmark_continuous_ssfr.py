@@ -12,9 +12,9 @@ import time
 import numpy as np
 import math
 
-from atlas.spaces.continuous import ContinuousField, ContinuousRicciSpace
-from atlas.spaces.continuous_ssfr import ContinuousSSFR
-from atlas.spaces.continuous_optimized import (
+from src.spaces.continuous import ContinuousField, ContinuousRicciSpace
+from src.spaces.continuous_ssfr import ContinuousSSFR
+from src.spaces.continuous_optimized import (
     OptimizedContinuousField,
     OptimizedContinuousRicciSpace,
     OptimizedContinuousSSFR,
@@ -32,8 +32,7 @@ def benchmark_field():
     # 优化
     optimized = OptimizedContinuousField(default_value=0.0)
 
-    # 添加采样点
-    n = 1000
+    # 添加采样�?    n = 1000
     positions = [(np.random.random()*10, np.random.random()*10) for _ in range(n)]
 
     # 添加性能
@@ -103,8 +102,7 @@ def benchmark_space():
     # 优化
     optimized = OptimizedContinuousRicciSpace()
 
-    # 预填充数据
-    for _ in range(50):
+    # 预填充数�?    for _ in range(50):
         pos = (np.random.random()*10, np.random.random()*10)
         obs = {
             'obstacles': [(pos[0]+0.5, pos[1]+0.5)],
@@ -269,7 +267,7 @@ def benchmark_ssfr():
 
 
 def run_all_benchmarks():
-    """运行所有对比测试"""
+    """运行所有对比测�?""
     print("=" * 70)
     print("Continuous SSFR Performance Comparison")
     print("Original vs Optimized")
@@ -280,8 +278,7 @@ def run_all_benchmarks():
     results['space'] = benchmark_space()
     results['ssfr'] = benchmark_ssfr()
 
-    # 汇总
-    print("\n" + "=" * 70)
+    # 汇�?    print("\n" + "=" * 70)
     print("SUMMARY")
     print("=" * 70)
 

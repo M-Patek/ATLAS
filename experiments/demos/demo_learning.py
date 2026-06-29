@@ -1,22 +1,21 @@
 """
 演示: Learning Integration
 
-展示贝叶斯优化、元学习和神经空间
-"""
+展示贝叶斯优化、元学习和神经空�?"""
 
 import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
 
 import numpy as np
-from atlas.learning import (
+from src.learning import (
     BayesianOptimizer, SpaceOptimizer,
     MetaLearner, TaskEmbedding,
     NeuralSpace, SpatialEncoder, MetricNetwork,
     MetaTrainingEnvironment
 )
-from atlas.core import GeodesicSolver
-from atlas.core.registry import create_space
+from src.core import GeodesicSolver
+from src.core.registry import create_space
 
 print("=" * 70)
 print("ATLAS: Learning Integration Demo")
@@ -45,8 +44,7 @@ def evaluate_space_performance(space):
         result = solver.solve(start, goal, obstacles)
 
         if result.success:
-            # 综合评分：步数少 + 成本低 + 时间短
-            score = (100 / (len(result.path) + 1)) + \
+            # 综合评分：步数少 + 成本�?+ 时间�?            score = (100 / (len(result.path) + 1)) + \
                    (10 / (result.cost + 1)) + \
                    (1 / (result.time_ms + 1))
             return score
@@ -81,8 +79,7 @@ print("Comparing before/after optimization:")
 space_default = create_space("ricci", width=40, height=20, curvature_scale=1.0)
 score_default = evaluate_space_performance(space_default)
 
-# 优化后
-space_optimized = create_space("ricci", width=40, height=20,
+# 优化�?space_optimized = create_space("ricci", width=40, height=20,
                                curvature_scale=result.best_params['curvature_scale'])
 score_optimized = evaluate_space_performance(space_optimized)
 
@@ -141,7 +138,7 @@ print("-" * 70)
 for task in tasks:
     recommendation = meta.get_space_recommendation(task)
 
-    # 前3推荐
+    # �?推荐
     top3 = [r['space'] for r in recommendation['all_recommendations'][:3]]
     alternatives = ", ".join(top3[1:])
 
@@ -269,8 +266,7 @@ for stage_idx in range(len(curriculum.stages)):
     stage = curriculum.current_stage
     print(f"\n  {stage.name}")
 
-    # 生成环境并评估
-    for episode in range(5):  # 模拟5个episode
+    # 生成环境并评�?    for episode in range(5):  # 模拟5个episode
         task = env.generate_task(difficulty=stage.difficulty)
 
         # 选择空间
@@ -316,8 +312,7 @@ selected_type = recommendation['recommended']
 print(f"Step 1: Meta-learner selects '{selected_type}' space")
 print(f"        (confidence: {recommendation['confidence']:.2f})")
 
-# 步骤2: 贝叶斯优化参数
-print(f"\nStep 2: Optimizing parameters for {selected_type}...")
+# 步骤2: 贝叶斯优化参�?print(f"\nStep 2: Optimizing parameters for {selected_type}...")
 
 if selected_type == 'ricci':
     opt = SpaceOptimizer(selected_type, {'curvature_scale': (0.5, 2.5)})

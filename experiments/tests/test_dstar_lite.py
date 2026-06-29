@@ -10,8 +10,8 @@ import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
 
 import time
-from atlas.core import AdaptiveNavigator
-from atlas.core.registry import create_space
+from src.core import AdaptiveNavigator
+from src.core.registry import create_space
 
 
 def create_maze_with_moving_obstacle():
@@ -21,20 +21,18 @@ def create_maze_with_moving_obstacle():
         'goal': (35, 10),
         # 初始障碍物（墙）
         'initial_obstacles': {(20, y) for y in range(3, 17) if y != 10},
-        # 移动障碍物轨迹
-        'moving_obstacle': [
-            (25, 8),   # 时间步1: 在路径上出现
-            (26, 9),   # 时间步2: 移动
-            (27, 10),  # 时间步3: 阻挡原路径
-            (28, 10),  # 时间步4: 继续
+        # 移动障碍物轨�?        'moving_obstacle': [
+            (25, 8),   # 时间�?: 在路径上出现
+            (26, 9),   # 时间�?: 移动
+            (27, 10),  # 时间�?: 阻挡原路�?            (28, 10),  # 时间�?: 继续
         ]
     }
 
 
 def test_static_comparison():
-    """对比: 静态环境中的 A* vs D* Lite"""
+    """对比: 静态环境中�?A* vs D* Lite"""
     print("=" * 70)
-    print("Test 1: 静态环境对比")
+    print("Test 1: 静态环境对�?)
     print("=" * 70)
 
     scenario = create_maze_with_moving_obstacle()
@@ -49,7 +47,7 @@ def test_static_comparison():
     )
 
     # GeodesicSolver (A*)
-    from atlas.core import GeodesicSolver
+    from src.core import GeodesicSolver
     solver_a = GeodesicSolver(space)
     result_a = solver_a.solve(
         scenario['start'], scenario['goal'], scenario['initial_obstacles']
@@ -67,7 +65,7 @@ def test_static_comparison():
 
 
 def test_dynamic_replanning():
-    """测试: 动态重新规划能力"""
+    """测试: 动态重新规划能�?""
     print("=" * 70)
     print("Test 2: 动态障碍物重新规划")
     print("=" * 70)
@@ -101,8 +99,7 @@ def test_dynamic_replanning():
     while current_pos != scenario['goal'] and step < max_steps:
         step += 1
 
-        # 模拟障碍物移动
-        new_obs = {}
+        # 模拟障碍物移�?        new_obs = {}
         if step <= len(scenario['moving_obstacle']):
             moving_obs = scenario['moving_obstacle'][step - 1]
             new_obs = {'obstacles': [moving_obs]}
@@ -118,8 +115,7 @@ def test_dynamic_replanning():
         current_pos = next_pos
         path_history.append(current_pos)
 
-        # 每5步显示状态
-        if step % 5 == 0 or new_obs:
+        # �?步显示状�?        if step % 5 == 0 or new_obs:
             print(f"  Position: {current_pos}, Path devs: {navigator.stats['path_deviations']}")
 
     print()
@@ -131,9 +127,9 @@ def test_dynamic_replanning():
 
 
 def test_euclidean_vs_ricci_dynamic():
-    """对比: 不同空间在动态环境中的适应性"""
+    """对比: 不同空间在动态环境中的适应�?""
     print("=" * 70)
-    print("Test 3: 空间类型对比 (动态环境)")
+    print("Test 3: 空间类型对比 (动态环�?")
     print("=" * 70)
 
     scenario = create_maze_with_moving_obstacle()
@@ -152,12 +148,10 @@ def test_euclidean_vs_ricci_dynamic():
             if not success:
                 continue
 
-            # 模拟10步
-            current_pos = scenario['start']
+            # 模拟10�?            current_pos = scenario['start']
             for step in range(1, 11):
                 new_obs = {}
-                if step == 5:  # 第5步添加新障碍物
-                    new_obs = {'obstacles': [(15, 10)]}
+                if step == 5:  # �?步添加新障碍�?                    new_obs = {'obstacles': [(15, 10)]}
 
                 next_pos = navigator.step(current_pos, new_obs)
                 if next_pos is None:

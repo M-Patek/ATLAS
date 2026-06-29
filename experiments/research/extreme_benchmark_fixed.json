@@ -1,0 +1,29 @@
+{
+  "test_type": "extreme_stress_test_fixed",
+  "results": [
+    {
+      "property_name": "Intervenable",
+      "before_score": 1.184522876347933,
+      "after_score": 0.0,
+      "improvement": 118452287.6347933,
+      "p_value": 1.2647189486921487e-83,
+      "sample_size": 100
+    },
+    {
+      "property_name": "Persistent",
+      "before_score": 0.1774519936446566,
+      "after_score": 0.01573030990415407,
+      "improvement": 11.280889055396452,
+      "p_value": 1.862645149230957e-09,
+      "sample_size": 30
+    },
+    {
+      "property_name": "Transferable",
+      "before_score": 35.346733504281865,
+      "after_score": 0.40429138665289505,
+      "improvement": 87.42885403180829,
+      "p_value": 1.7763568394002505e-15,
+      "sample_size": 50
+    }
+  ]
+}

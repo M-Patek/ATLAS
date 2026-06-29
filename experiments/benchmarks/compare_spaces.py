@@ -7,19 +7,17 @@ import numpy as np
 import sys
 import os
 
-# 添加 src 到路径
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
+# 添加 src 到路�?sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
 
-from atlas.core import Experiment, GeodesicSolver
-from atlas.core.registry import create_space, list_available_spaces
+from src.core import Experiment, GeodesicSolver
+from src.core.registry import create_space, list_available_spaces
 
 
 def create_maze_scenario(seed: int = 42):
     """创建迷宫测试场景"""
     np.random.seed(seed)
 
-    # 简单的墙障碍
-    obstacles = set()
+    # 简单的墙障�?    obstacles = set()
     for y in range(3, 17):
         if y != 10:  # 留出通道
             obstacles.add((20, y))
@@ -60,8 +58,7 @@ def main():
     # 测试场景
     scenario = create_maze_scenario()
 
-    # 测试的空间配置
-    space_configs = [
+    # 测试的空间配�?    space_configs = [
         ("euclidean", {}),
         ("ricci", {"curvature_scale": 1.5}),
         ("conformal", {}),
@@ -80,8 +77,7 @@ def main():
             for obs in scenario['observations']:
                 space.update_from_observation(obs['position'], obs['data'])
 
-            # 创建求解器
-            solver = GeodesicSolver(space)
+            # 创建求解�?            solver = GeodesicSolver(space)
 
             # 求解
             result = solver.solve(
@@ -110,8 +106,7 @@ def main():
                 'error': str(e)
             })
 
-    # 汇总
-    print()
+    # 汇�?    print()
     print("=" * 70)
     print("Summary")
     print("=" * 70)

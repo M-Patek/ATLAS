@@ -13,9 +13,9 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
 import pytest
 import numpy as np
 
-from atlas.core.space import CognitiveSpace
-from atlas.core.registry import registry, create_space, list_available_spaces
-from atlas.core.solver import GeodesicSolver
+from src.core.space import CognitiveSpace
+from src.core.registry import registry, create_space, list_available_spaces
+from src.core.solver import GeodesicSolver
 
 
 class TestRegistry:

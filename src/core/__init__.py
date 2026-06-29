@@ -9,8 +9,8 @@ ATLAS Core: Pluggable Cognitive Architecture Framework
 4. 实验框架支持对比测试 - Experiment, AblationStudy
 
 快速开始:
-    from atlas.core import Experiment, GeodesicSolver
-    from atlas.core.registry import create_space
+    from src.core import Experiment, GeodesicSolver
+    from src.core.registry import create_space
 
     # 创建空间
     space = create_space("ricci", width=40, height=20, curvature_scale=2.0)
