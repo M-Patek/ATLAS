@@ -48,3 +48,15 @@ benchmark_result.txt
 *.png
 *.jpg
 *.jpeg
+
+# AI agent files (local dev only)
+AGENTS.md
+CLAUDE.md
+llms.txt
+
+# Internal docs (not for public repo)
+docs/architecture/
+docs/operations/
+docs/subsystems/
+docs/adr/
+docs/INDEX.md
